@@ -3,237 +3,360 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Allocation checkup · Flint</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<title>flint › wiki</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --canvas:#0a0a0f; --panel:#12121a; --elevated:#181822; --wash:#1c1c28;
-  --line:#2a2a3a; --line-strong:#3a3a50;
-  --ink:#ececf1; --body:#c4c4d4; --muted:#8b8fa3;
-  --accent:#8b7cf7; --accent-dim:rgba(139,124,247,.18);
-  --warn:#f0c674; --warn-dim:rgba(240,198,116,.12);
+  --bg:#0a0c0a; --panel:#101410; --elev:#161a16; --line:#1e2a1e;
+  --ink:#d6e0d6; --muted:#7a8a7a; --dim:#4a5a4a;
+  --green:#3ddc84; --green-dim:rgba(61,220,132,.12);
+  --blue:#5b9fd4; --warn:#e0b060; --accent:#8b7cf7;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,-apple-system,sans-serif;background:var(--canvas);color:var(--ink);-webkit-font-smoothing:antialiased}
-.phone{max-width:430px;margin:0 auto;min-height:100vh;padding:0 0 110px;background:var(--canvas)}
-.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
-.nav b{color:var(--ink);font-weight:600}
-.story{padding:20px 16px 8px}
-.kicker{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;font-weight:600}
-h1{font-size:24px;letter-spacing:-.03em;line-height:1.2;margin-bottom:6px}
-.lede{color:var(--muted);font-size:14px;margin-bottom:18px;line-height:1.45}
-.article{font-size:15px;line-height:1.65;color:var(--body)}
-.article p{margin:0 0 14px}
-.article .claim{
-  color:var(--ink);border-bottom:1px solid rgba(139,124,247,.45);
-  cursor:pointer;font-weight:500;
+body{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.shell{max-width:440px;margin:0 auto;min-height:100vh;padding-bottom:88px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;letter-spacing:.04em;position:sticky;top:0;background:var(--bg);z-index:5}
+.top .brand{color:var(--green);font-weight:600}
+.prompt{color:var(--green)}
+.view{display:none;padding:14px}
+.view.on{display:block}
+h1{font-size:15px;color:var(--green);font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:11px;margin-bottom:14px}
+.row{border:1px solid var(--line);background:var(--panel);padding:10px 12px;margin-bottom:8px;border-radius:2px;cursor:pointer}
+.row:hover{border-color:var(--dim)}
+.row .t{color:var(--ink);font-size:12px}
+.row .s{color:var(--dim);font-size:10px;margin-top:3px;letter-spacing:.04em}
+.row .badge{float:right;font-size:10px;color:var(--green);letter-spacing:.06em}
+.row .badge.build{color:var(--warn)}
+.row .badge.upd{color:var(--blue)}
+.link{display:inline-block;margin:10px 0;color:var(--blue);font-size:11px;cursor:pointer;border:0;background:0;font:inherit;padding:0}
+.btn{display:inline-block;margin-top:8px;padding:7px 10px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;border-radius:2px;letter-spacing:.04em}
+.btn.primary{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.btn:disabled{opacity:.4;cursor:default}
+.conn{display:flex;justify-content:space-between;align-items:center}
+.conn .st{font-size:10px;letter-spacing:.06em}
+.conn .st.on{color:var(--green)}.conn .st.off{color:var(--dim)}
+.term{border:1px solid var(--line);background:#080a08;padding:10px 12px;border-radius:2px;min-height:120px}
+.term .line{margin:4px 0;white-space:pre-wrap}
+.term .out{color:var(--muted)}
+.term .in{color:var(--ink)}
+.term input.cli{
+  width:100%;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;caret-color:var(--green);
 }
-.article .claim.changed{border-bottom-color:var(--warn);color:var(--warn)}
-.article .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;color:var(--ink)}
-.inline-note{display:none;margin:8px 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--elevated);font-size:12px;line-height:1.45;color:var(--muted)}
-.inline-note.open{display:block}
-.inline-note b{display:block;color:var(--accent);font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
-.inline-note .src{margin-top:6px;padding:8px;border-radius:4px;background:var(--accent-dim);color:var(--body);font-family:"IBM Plex Mono",monospace;font-size:11.5px}
-.stub{color:var(--muted);font-style:italic;font-size:13px}
-.mark{color:var(--warn);font-size:11px;border-bottom:1px solid var(--warn);margin-left:4px;font-weight:600}
-.suggest{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
-.suggest h2{font-size:15px;color:var(--ink);margin-bottom:6px}
-.suggest .mix{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);margin-bottom:8px}
-.suggest ul{padding-left:0;list-style:none}
-.suggest li{font-size:13px;color:var(--body);padding:3px 0 3px 12px;position:relative}
-.suggest li:before{content:"";position:absolute;left:0;top:10px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
-.suggest .caution{margin-top:8px;font-size:11px;color:var(--muted)}
-.refines{margin:12px 0}
-.refine{margin:8px 0;padding:10px 12px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
-.refine .q{font-size:12px;color:var(--ink);font-weight:500}
-.refine .a{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
-.rails{margin:8px 16px 16px}
-.rails summary{cursor:pointer;font-size:12px;color:var(--muted);padding:8px 0;list-style:none}
-.rails summary::-webkit-details-marker{display:none}
-.rails .lane{margin-top:8px}
-.rails .lane h3{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
-.rails .item{font-size:12px;color:var(--body);padding:6px 8px;border:1px solid var(--line);border-radius:4px;margin-bottom:4px;background:var(--panel)}
-.rails .item span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.rails button.use{margin-top:4px;font:inherit;font-size:11px;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:4px;padding:4px 8px;cursor:pointer}
-.ask{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:min(398px,calc(100% - 24px));background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.45)}
-.ask input{flex:1;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:14px}
-.ask input::placeholder{color:var(--muted)}
-.ask button{border:1px solid var(--line-strong);background:transparent;color:var(--muted);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer}
-.demo{margin:0 16px 24px;font-size:12px;color:var(--muted)}
-.demo summary{cursor:pointer;padding:6px 0}
-.demo .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.demo button,.demo label{font:inherit;font-size:11px;border:1px solid var(--line);background:var(--elevated);color:var(--muted);padding:5px 8px;border-radius:4px;cursor:pointer}
-.demo label{display:inline-flex;gap:6px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{font-size:10px;padding:4px 8px;border:1px solid var(--line);color:var(--muted);cursor:pointer;border-radius:2px;background:var(--elev)}
+.chip.on{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.spine{margin:10px 0;padding:10px;border:1px dashed var(--line);color:var(--ink);font-size:12px}
+.spine b{color:var(--green);font-size:10px;letter-spacing:.06em;display:block;margin-bottom:4px}
+.status{color:var(--warn);font-size:11px;letter-spacing:.04em;margin:12px 0}
+/* brief reuse */
+.article{font-size:13px;line-height:1.65;color:var(--muted)}
+.article p{margin:0 0 12px}
+.claim{color:var(--ink);border-bottom:1px solid rgba(61,220,132,.4);cursor:pointer}
+.claim.changed{border-bottom-color:var(--warn);color:var(--warn)}
+.mono{color:var(--ink)}
+.note{display:none;margin:6px 0 12px;padding:8px;border:1px solid var(--line);background:var(--elev);font-size:11px;color:var(--muted)}
+.note.open{display:block}
+.note .src{margin-top:6px;padding:6px;background:rgba(91,159,212,.12);font-size:11px}
+.mark{color:var(--warn);font-size:10px;border-bottom:1px solid var(--warn);margin-left:4px}
+.suggest{margin:12px 0;padding:12px;border:1px solid var(--line);background:var(--panel)}
+.suggest h2{font-size:13px;color:var(--ink);margin-bottom:4px}
+.suggest .mix{color:var(--green);font-size:11px;margin-bottom:6px}
+.suggest li{list-style:none;padding:2px 0 2px 10px;position:relative;font-size:11px;color:var(--muted)}
+.suggest li:before{content:"";position:absolute;left:0;top:8px;width:3px;height:3px;background:var(--green);border-radius:50%}
+.refine{margin:8px 0;padding:8px 10px;border-left:2px solid var(--green);background:var(--elev)}
+.refine .q{font-size:11px;color:var(--ink)}.refine .a{font-size:11px;color:var(--muted);margin-top:3px}
+.rails{margin-top:12px;color:var(--dim);font-size:11px}
+.rails summary{cursor:pointer;padding:6px 0}
+.rails .item{border:1px solid var(--line);padding:6px 8px;margin:4px 0;background:var(--panel);color:var(--muted)}
+.rails h3{font-size:10px;color:var(--green);letter-spacing:.06em;margin:8px 0 4px}
+.askbar{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:min(412px,calc(100% - 28px));background:var(--panel);border:1px solid var(--line);padding:8px 10px;display:none;gap:8px;align-items:center;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.askbar.on{display:flex}
+.askbar .p{color:var(--green)}
+.askbar input{flex:1;border:0;outline:0;background:0;color:var(--ink);font:inherit;font-size:12px}
+.askbar button{border:1px solid var(--line);background:0;color:var(--muted);font:inherit;font-size:11px;padding:5px 8px;cursor:pointer}
+.demo{margin-top:16px;color:var(--dim);font-size:10px}
+.demo summary{cursor:pointer}
+.hidden{display:none!important}
+.stub{font-style:italic;color:var(--dim)}
 </style>
 </head>
 <body>
-<div class="phone">
-  <div class="nav"><span>← Flint</span><b>Brief</b><span>···</span></div>
-  <div class="story">
-    <div class="kicker">Allocation checkup · example data</div>
-    <h1>Your mix is fine — a little US-heavy</h1>
-    <p class="lede">Moderate risk, 10-year horizon. Sample mix only — not live broker holdings.</p>
+<div class="shell">
+  <div class="top"><span class="brand" id="path">~/wiki</span><span id="clock">v0</span></div>
 
-    <div class="article" id="article">
-      <p>
-        We assumed <span class="claim" data-dig="d1">moderate risk and a 10-year horizon</span><span id="m1" class="mark" hidden>Source changed</span>,
-        with a current mix of <span class="mono">VTI 60% / BND 30% / cash 10%</span>.
-        No cost basis, tax bracket, or near-term cash need on file.
-      </p>
-      <div class="inline-note" id="d1"></div>
-
-      <p>
-        The concentration sits in the equity sleeve:
-        <span class="claim" data-dig="d2">VTI is almost all US</span>, and the top names drive a large slice of that sleeve.
-        BND fell with rates in 2022 — ballast, not a cash substitute.
-        Cash at 10% is idle for a decade-long plan.
-      </p>
-      <div class="inline-note" id="d2"></div>
-
-      <p>
-        What we’d change is small:
-        <span class="claim" data-dig="d3">trim cash to ~5% and add VXUS ~10% from VTI</span>,
-        leave BND as ballast.
-        <span id="acl" class="stub"> Employer stock exposure: [Source exists — no access]</span>
-      </p>
-      <div class="inline-note" id="d3"></div>
-    </div>
-
-    <div class="suggest" id="suggest">
-      <h2>Trim cash. Add a small international sleeve.</h2>
-      <div class="mix">VTI 50% / VXUS 10% / BND 30% / cash 5%</div>
-      <ul>
-        <li>Cash 10% → 5%.</li>
-        <li>VXUS 10%, funded from VTI.</li>
-        <li>BND stays 30%.</li>
-        <li>Fits moderate risk, 10 years.</li>
-      </ul>
-      <p class="caution">Example data. Did not pull live broker holdings.</p>
-    </div>
-
-    <div class="refines" id="refines"></div>
+  <!-- STORIES -->
+  <div class="view on" id="v-stories">
+    <h1><span class="prompt">›</span> stories</h1>
+    <p class="sub">ready · building · updating</p>
+    <div id="storyList"></div>
+    <button class="btn primary" id="btnNew">new story</button>
+    <button class="link" id="btnConnect">connect sources →</button>
   </div>
 
-  <details class="rails">
-    <summary>▸ Used · Skipped · Don’t know yet</summary>
-    <div class="lane">
+  <!-- CONNECT -->
+  <div class="view" id="v-connect">
+    <h1><span class="prompt">›</span> connect</h1>
+    <p class="sub">your sources · two only</p>
+    <div class="row conn" id="c-slack"><div><div class="t">Slack</div><div class="s">channels as corpus</div></div><span class="st off" id="st-slack">not connected</span></div>
+    <div class="row conn" id="c-gdocs"><div><div class="t">Google Docs</div><div class="s">docs as corpus</div></div><span class="st off" id="st-gdocs">not connected</span></div>
+    <button class="btn" id="backStories1">← stories</button>
+  </div>
+
+  <!-- NEW STORY -->
+  <div class="view" id="v-new">
+    <h1><span class="prompt">›</span> new story</h1>
+    <p class="sub">pick corpus → one thing → sharpen → build</p>
+    <div class="term" id="term">
+      <div class="line out" id="termLog"></div>
+      <div class="line in" id="termPromptRow"><span class="prompt">~/wiki $</span> <input class="cli" id="cli" autocomplete="off" spellcheck="false" /></div>
+    </div>
+    <div class="chips" id="corpusChips"></div>
+    <div class="spine hidden" id="spineBox"><b>sharpened spine</b><span id="spineText"></span></div>
+    <div class="status hidden" id="buildStatus">building… · open when ready</div>
+    <button class="btn" id="backStories2">← stories</button>
+  </div>
+
+  <!-- BRIEF -->
+  <div class="view" id="v-brief">
+    <button class="link" id="backStories3">← stories</button>
+    <div class="sub" style="margin-top:8px" id="briefKicker">Allocation checkup · example data</div>
+    <h1 id="briefTitle" style="font-size:16px;color:var(--ink)">Your mix is fine — a little US-heavy</h1>
+    <p class="sub" id="briefLede">Moderate risk, 10-year horizon. Sample mix only.</p>
+    <div class="article" id="article"></div>
+    <div class="suggest" id="suggest"></div>
+    <div id="refines"></div>
+    <details class="rails">
+      <summary>▸ Used · Skipped · Don’t know yet</summary>
       <h3>Used</h3>
-      <div class="item">Moderate risk, 10 years<span>From the sample situation.</span></div>
-      <div class="item">VTI / BND / cash mix<span>60% / 30% / 10%.</span></div>
-      <div class="item">US concentration<span>VTI is the equity sleeve — US only.</span></div>
-    </div>
-    <div class="lane">
+      <div class="item">Moderate risk, 10 years<span style="display:block;color:var(--dim)">From the sample.</span></div>
+      <div class="item">VTI / BND / cash mix<span style="display:block;color:var(--dim)">60% / 30% / 10%.</span></div>
       <h3>Skipped</h3>
-      <div class="item">Tax lots<span>No cost basis.</span>
-        <button class="use" data-skip="s1">Use something we skipped</button></div>
-      <div class="item">Live broker holdings<span>Not connected.</span>
-        <button class="use" data-skip="s2">Use something we skipped</button></div>
-      <div class="item">International from the start<span>Started with VTI only.</span>
-        <button class="use" data-skip="s3">Use something we skipped</button></div>
-    </div>
-    <div class="lane">
+      <div class="item">Tax lots · Live broker · International from start</div>
       <h3>Don’t know yet</h3>
-      <div class="item">Cost basis &amp; tax bracket<span>Needed for any harvest.</span></div>
-      <div class="item">Cash need in 12 months<span>Could make 5% cash too thin.</span></div>
-      <div class="item" id="unk-employer">Employer stock<span>Not disclosed.</span></div>
-    </div>
-  </details>
-
-  <div class="demo">
-    <details>
-      <summary>demo controls</summary>
-      <label><input type="checkbox" id="aclToggle"/> viewer has HR access</label>
-      <div class="row">
-        <button id="editAssump">edit risk assumption</button>
-        <button id="angle">try another angle</button>
-      </div>
+      <div class="item">Cost basis · Cash need · Employer stock</div>
     </details>
-  </div>
-
-  <div class="ask">
-    <input id="ask" placeholder="Ask about this brief…" />
-    <button id="askGo">Ask</button>
+    <div class="demo"><details><summary>demo</summary>
+      <button class="btn" id="editSrc">edit assumption → Source changed</button>
+      <label style="display:block;margin-top:6px"><input type="checkbox" id="acl"/> HR access</label>
+    </details></div>
   </div>
 </div>
+
+<div class="askbar" id="askbar">
+  <span class="p">›</span>
+  <input id="ask" placeholder="ask — refine this brief…" />
+  <button id="askGo">ask</button>
+</div>
+
 <script>
-const digs = {
-  d1: `<b>How we reasoned</b>
-    <div class="src"><b>E1 · Assumed</b>Moderate risk, 10 years. Sample mix VTI 60 / BND 30 / cash 10.</div>
-    <div class="src"><b>E2 · Not used</b>Did not pull live broker holdings.</div>
-    <div class="src"><b>E3 · Unknown</b>No cost basis, tax bracket, or upcoming cash need.</div>`,
-  d2: `<b>How we reasoned</b>
-    <div class="src"><b>E1 · Concentration</b>VTI ~60% — almost all US. Top 10 names drive a large slice.</div>
-    <div class="src"><b>E2 · Bonds</b>BND fell with rates in 2022; not a cash substitute.</div>
-    <div class="src"><b>E3 · Cash</b>10% cash is idle on a 10-year horizon.</div>`,
-  d3: `<b>How we reasoned</b>
-    <div class="src"><b>E1 · Move</b>Trim cash 10% → 5%. Add VXUS ~10% from VTI.</div>
-    <div class="src"><b>E2 · Leave</b>BND stays ballast at 30%.</div>
-    <div class="src"><b>E3 · Caution</b>Example numbers only — not advice.</div>`,
+const state = {
+  slack: false, gdocs: false,
+  stories: [
+    { id:'alloc', title:'Allocation checkup', status:'ready', spine:'US-heavy mix needs a small international sleeve' },
+  ],
+  step: 'corpus', // corpus | onething | sharpen | building
+  picked: new Set(),
+  oneThing: '',
+  spine: '',
 };
-let edited=false, hasHR=false;
 
-document.querySelectorAll('.claim').forEach(el=>{
-  el.onclick=()=>{
-    const id=el.dataset.dig; const n=document.getElementById(id);
-    const open=n.classList.toggle('open');
-    if(open) n.innerHTML=digs[id];
-  };
-});
+const CHANNELS = ['#pricing','#product','#customer-calls','#security'];
+const DOCS = ['Q3 allocation notes','Risk memo','Cash policy'];
 
-function answer(q){
-  const s=q.toLowerCase();
-  if(/drawdown|drop|loss/.test(s)) return 'A 20% VTI drop is about −12% of a 60/30/10 mix. BND does not fully offset that.';
-  if(/tax|cost basis|harvest/.test(s)) return 'No cost basis on file. Can’t size a tax harvest.';
-  if(/broker|holding|live/.test(s)) return 'Did not pull live broker holdings. Mix is the sample: VTI / BND / cash.';
-  if(/internat|vxus|ex-us/.test(s)) return 'VTI is US only. VXUS ~10% cuts the US concentration without changing the 10-year idea.';
-  if(/cash|buffer/.test(s)) return 'Cash at 10% is a drag on a 10-year horizon. 5% still covers a rebalance.';
-  if(/bond|bnd|duration/.test(s)) return 'BND duration is ~6 years. It fell with rates in 2022. It is ballast, not a cash bin.';
-  return 'On this brief: trim cash, add a small VXUS sleeve from VTI, leave BND. ('+q.trim()+')';
+function show(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.getElementById('askbar').classList.toggle('on', id==='v-brief');
+  const paths={ 'v-stories':'~/wiki', 'v-connect':'~/wiki/connect', 'v-new':'~/wiki/new', 'v-brief':'~/wiki/stories/alloc' };
+  document.getElementById('path').textContent = paths[id]||'~/wiki';
 }
 
-function appendRefine(q,a){
+function renderStories(){
+  const el=document.getElementById('storyList'); el.innerHTML='';
+  state.stories.forEach(s=>{
+    const d=document.createElement('div'); d.className='row';
+    const badge = s.status==='ready'?'ready':s.status==='building'?'building':'updating';
+    const cls = s.status==='ready'?'':s.status==='building'?' build':' upd';
+    d.innerHTML=`<span class="badge${cls}">${badge}</span><div class="t">${s.title}</div><div class="s">${s.spine||'—'}</div>`;
+    d.onclick=()=>{
+      if(s.status==='building'||s.status==='updating'){
+        alert('still '+s.status+' — open when ready');
+        return;
+      }
+      openBrief(s);
+    };
+    el.appendChild(d);
+  });
+}
+
+function openBrief(s){
+  show('v-brief');
+  document.getElementById('briefKicker').textContent = s.title+' · example data';
+  document.getElementById('briefTitle').textContent = s.id==='alloc'
+    ? 'Your mix is fine — a little US-heavy'
+    : s.title;
+  document.getElementById('briefLede').textContent = s.spine;
+  document.getElementById('article').innerHTML = `
+    <p>We assumed <span class="claim" data-d="d1">moderate risk and a 10-year horizon</span><span id="m1" class="mark" hidden>Source changed</span>,
+    with mix <span class="mono">VTI 60% / BND 30% / cash 10%</span>. No cost basis on file.</p>
+    <div class="note" id="d1"></div>
+    <p>Concentration sits in equity: <span class="claim" data-d="d2">VTI is almost all US</span>. BND is ballast, not cash. Cash at 10% is idle for a decade.</p>
+    <div class="note" id="d2"></div>
+    <p>What we’d change is small: <span class="claim" data-d="d3">trim cash to ~5% and add VXUS ~10% from VTI</span>.
+    <span id="acl" class="stub"> Employer stock: [Source exists — no access]</span></p>
+    <div class="note" id="d3"></div>`;
+  document.getElementById('suggest').innerHTML = `
+    <h2>Trim cash. Add a small international sleeve.</h2>
+    <div class="mix">VTI 50% / VXUS 10% / BND 30% / cash 5%</div>
+    <ul><li>Cash 10% → 5%.</li><li>VXUS 10% from VTI.</li><li>BND stays 30%.</li></ul>
+    <p style="margin-top:6px;font-size:10px;color:var(--dim)">Example data. Did not pull live broker holdings.</p>`;
+  wireClaims();
+}
+
+const digs={
+  d1:`<b style="color:var(--blue)">How we reasoned</b><div class="src">E1 · Assumed moderate risk, 10y. Sample mix.</div><div class="src">E2 · Skipped live broker holdings.</div>`,
+  d2:`<b style="color:var(--blue)">How we reasoned</b><div class="src">E1 · VTI ~60% US-only.</div><div class="src">E2 · BND duration ~6y — ballast.</div>`,
+  d3:`<b style="color:var(--blue)">How we reasoned</b><div class="src">E1 · Trim cash → 5%. Add VXUS ~10%.</div><div class="src">E2 · Leave BND.</div>`,
+};
+function wireClaims(){
+  document.querySelectorAll('.claim').forEach(c=>{
+    c.onclick=()=>{
+      const n=document.getElementById(c.dataset.d);
+      n.classList.toggle('open');
+      if(n.classList.contains('open')) n.innerHTML=digs[c.dataset.d];
+    };
+  });
+}
+
+function setConn(kind, on){
+  state[kind]=on;
+  const st=document.getElementById('st-'+kind);
+  st.textContent=on?'connected':'not connected';
+  st.className='st '+(on?'on':'off');
+  renderChips();
+}
+
+function renderChips(){
+  const box=document.getElementById('corpusChips'); box.innerHTML='';
+  const items=[];
+  if(state.slack) CHANNELS.forEach(c=>items.push({id:'ch:'+c,label:c}));
+  if(state.gdocs) DOCS.forEach(c=>items.push({id:'doc:'+c,label:c}));
+  if(!items.length){ box.innerHTML='<span style="color:var(--dim);font-size:10px">connect Slack or Docs first</span>'; return; }
+  items.forEach(it=>{
+    const b=document.createElement('button'); b.className='chip'+(state.picked.has(it.id)?' on':'');
+    b.textContent=it.label;
+    b.onclick=()=>{ if(state.picked.has(it.id)) state.picked.delete(it.id); else state.picked.add(it.id); renderChips(); };
+    box.appendChild(b);
+  });
+}
+
+function termOut(msg){
+  const log=document.getElementById('termLog');
+  const d=document.createElement('div'); d.className='line out'; d.textContent=msg; log.appendChild(d);
+  log.parentElement.scrollTop=log.parentElement.scrollHeight;
+}
+
+function resetNew(){
+  state.step='corpus'; state.picked.clear(); state.oneThing=''; state.spine='';
+  document.getElementById('termLog').innerHTML='';
+  document.getElementById('spineBox').classList.add('hidden');
+  document.getElementById('buildStatus').classList.add('hidden');
+  document.getElementById('cli').disabled=false;
+  renderChips();
+  termOut('pick channels / docs (tap chips), then type the one thing and enter');
+  document.getElementById('cli').placeholder='the one thing this story is about…';
+  document.getElementById('cli').focus();
+}
+
+function sharpen(raw){
+  const t=raw.trim().replace(/\?+$/,'');
+  if(/alloc|mix|vti|portfolio|us-heavy/i.test(t))
+    return 'US-heavy VTI/BND/cash mix needs a small international sleeve';
+  if(/pric/i.test(t))
+    return 'Launch pricing locked at one simple paid plan';
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+
+document.getElementById('cli').onkeydown=e=>{
+  if(e.key!=='Enter') return;
+  const v=e.target.value.trim(); if(!v) return;
+  const row=document.createElement('div'); row.className='line in';
+  row.innerHTML='<span class="prompt">~/wiki $</span> '+v;
+  document.getElementById('termLog').appendChild(row);
+  e.target.value='';
+
+  if(state.step==='corpus'||state.step==='onething'){
+    if(!state.picked.size){ termOut('need at least one channel or doc — tap chips'); return; }
+    state.oneThing=v; state.step='sharpen';
+    state.spine=sharpen(v);
+    termOut('sharpened spine:');
+    document.getElementById('spineText').textContent=state.spine;
+    document.getElementById('spineBox').classList.remove('hidden');
+    termOut('confirm with `y` or rewrite the one thing');
+    e.target.placeholder='y to build · or rewrite…';
+    return;
+  }
+  if(state.step==='sharpen'){
+    if(/^y(es)?$/i.test(v)){
+      state.step='building';
+      e.target.disabled=true;
+      document.getElementById('buildStatus').classList.remove('hidden');
+      termOut('building… you can leave — story stays on the list');
+      const id='s'+Date.now();
+      const story={ id, title: state.spine.slice(0,42), status:'building', spine: state.spine };
+      state.stories.unshift(story);
+      renderStories();
+      setTimeout(()=>{
+        story.status='ready';
+        document.getElementById('buildStatus').textContent='ready · open from stories';
+        termOut('done. open from stories →');
+        renderStories();
+      }, 3500);
+      return;
+    }
+    state.oneThing=v; state.spine=sharpen(v);
+    document.getElementById('spineText').textContent=state.spine;
+    termOut('resharpened. `y` to build');
+  }
+};
+
+document.getElementById('btnNew').onclick=()=>{
+  if(!state.slack && !state.gdocs){ show('v-connect'); return; }
+  show('v-new'); resetNew();
+};
+document.getElementById('btnConnect').onclick=()=>show('v-connect');
+document.getElementById('backStories1').onclick=()=>show('v-stories');
+document.getElementById('backStories2').onclick=()=>show('v-stories');
+document.getElementById('backStories3').onclick=()=>show('v-stories');
+document.getElementById('c-slack').onclick=()=>setConn('slack', !state.slack);
+document.getElementById('c-gdocs').onclick=()=>setConn('gdocs', !state.gdocs);
+
+document.getElementById('askGo').onclick=()=>{
+  const q=document.getElementById('ask').value.trim(); if(!q) return;
+  const a=/cash/i.test(q)?'Cash at 10% is a drag on a 10y horizon. 5% still covers a rebalance.'
+    :/vxus|internat/i.test(q)?'VTI is US only. VXUS ~10% cuts concentration.'
+    :'On this brief: trim cash, add VXUS from VTI, leave BND. ('+q+')';
   const box=document.getElementById('refines');
   const d=document.createElement('div'); d.className='refine';
   d.innerHTML=`<div class="q">Q · ${q}</div><div class="a">${a}</div>`;
   box.appendChild(d);
-  d.scrollIntoView({behavior:'smooth',block:'center'});
-}
-
-document.getElementById('askGo').onclick=()=>{
-  const q=document.getElementById('ask').value.trim(); if(!q) return;
-  appendRefine(q, answer(q));
   document.getElementById('ask').value='';
 };
 document.getElementById('ask').onkeydown=e=>{ if(e.key==='Enter') document.getElementById('askGo').click(); };
-
-document.getElementById('aclToggle').onchange=e=>{
-  hasHR=e.target.checked;
-  document.getElementById('acl').textContent = hasHR
-    ? ' Employer stock: none disclosed in sample — treated as unknown.'
-    : ' Employer stock exposure: [Source exists — no access]';
-};
-document.getElementById('editAssump').onclick=()=>{
-  edited=true;
+document.getElementById('editSrc').onclick=()=>{
   document.getElementById('m1').hidden=false;
-  document.querySelector('[data-dig="d1"]').classList.add('changed');
-  digs.d1 = `<b>How we reasoned</b>
-    <div class="src"><b>E1 · Updated</b>Risk assumption edited — brief may need refresh.</div>
-    <div class="src"><b>E2 · Mix</b>Still VTI 60 / BND 30 / cash 10 until you ask again.</div>`;
+  document.querySelector('[data-d="d1"]')?.classList.add('changed');
 };
-document.getElementById('angle').onclick=()=>{
-  appendRefine('Try another angle', 'If risk were cautious: would not trim BND; cash can stay at 10%. Main path unchanged — this sits beside it.');
+document.getElementById('acl').onchange=e=>{
+  const span=document.querySelector('#article .stub');
+  if(span) span.textContent = e.target.checked
+    ? ' Employer stock: none disclosed — unknown.'
+    : ' Employer stock: [Source exists — no access]';
 };
-document.querySelectorAll('.use').forEach(btn=>{
-  btn.onclick=()=>{
-    const map={
-      s1:'Still no cost basis. Harvest size would be a guess — would only apply in a taxable account.',
-      s2:'Broker is not connected. Mix stays the sample: VTI 60 / BND 30 / cash 10.',
-      s3:'Fork: start with VXUS already in — VTI 50 / VXUS 10 / BND 30 / cash 10. No later “add VXUS” move.',
-    };
-    appendRefine('Used something we skipped', map[btn.dataset.skip]);
-    btn.disabled=true; btn.textContent='Pulled into brief';
-  };
-});
+
+renderStories();
+setConn('slack', true); // demo: slack preconnected so flow is tryable
 </script>
 </body>
 </html>
