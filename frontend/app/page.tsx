@@ -28,7 +28,7 @@ const sourceGroups = {
 export default function HomePage() {
   const [screen, setScreen] = useState<Screen>('stories');
   const [createStep, setCreateStep] = useState<CreateStep>('prompt');
-  const [prompt, setPrompt] = useState('@channel #product Where are we over-investing, and what should move?');
+  const [prompt, setPrompt] = useState('@channel #product @doc Allocation plan — where are we over-investing, and what should move?');
   const [digTab, setDigTab] = useState<DigTab>('used');
   const [digOpen, setDigOpen] = useState(false);
   const [sourceChanged, setSourceChanged] = useState(true);
@@ -41,6 +41,8 @@ export default function HomePage() {
     if (next === 'new') setCreateStep('prompt');
     window.scrollTo(0, 0);
   }
+
+  const commandReady = /@channel\b/i.test(prompt) && /@(doc|document)\b/i.test(prompt);
 
   function submitAsk(event: FormEvent) {
     event.preventDefault();
@@ -69,7 +71,7 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-          <button className="primary-command" onClick={() => go('new')}>+ NEW STORY</button>
+          <button className="outline-command" onClick={() => go('new')}>+ NEW STORY</button>
         </section>
       )}
 
@@ -86,18 +88,20 @@ export default function HomePage() {
 
       {screen === 'new' && (
         <section className="screen new-screen">
-          <header className="screen-header"><p>// NEW STORY</p><h1>What should stay true?</h1><span>Attach context, then ask for one thing.</span></header>
-          {createStep === 'prompt' && <form className="create-form" onSubmit={(e) => { e.preventDefault(); if (prompt.trim()) setCreateStep('spine'); }}>
-            <label htmlFor="story-prompt">ONE LINE, WITH SOURCES</label>
-            <textarea id="story-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} autoFocus />
-            <div className="mention-help"><code>@channel</code> Slack channel <code>@doc</code> or <code>@document</code> Google Doc</div>
-            <button className="primary-command" type="submit">SHARPEN →</button>
+          <header className="screen-header"><p>// NEW STORY</p><h1>What should stay true?</h1><span>One command attaches the corpus and sets the spine.</span></header>
+          {createStep === 'prompt' && <form className="create-form" onSubmit={(e) => { e.preventDefault(); if (commandReady) setCreateStep('spine'); }}>
+            <div className="command-line">
+              <label htmlFor="story-prompt">~/wiki $</label>
+              <input id="story-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} autoComplete="off" spellCheck={false} autoFocus />
+              <button type="submit" aria-label="Run command" disabled={!commandReady}>↵</button>
+            </div>
+            <div className="autocomplete" aria-live="polite"><span>@channel</span><span>@doc</span><span>@document</span></div>
           </form>}
           {createStep === 'spine' && <div className="spine">
             <p className="spine-label">SHARPENED SPINE</p>
             <blockquote>Show where product and engineering time is concentrated, what is being crowded out, and the allocation change the team has agreed to.</blockquote>
-            <div className="attached"><span>@channel #product</span><span>12 threads</span></div>
-            <div className="spine-actions"><button onClick={() => setCreateStep('prompt')}>← EDIT</button><button className="primary-command" onClick={() => setCreateStep('building')}>CONFIRM + BUILD</button></div>
+            <div className="attached"><span>@channel #product · @doc Allocation plan</span><span>13 sources</span></div>
+            <div className="spine-actions"><button onClick={() => setCreateStep('prompt')}>← EDIT</button><button className="outline-command" onClick={() => setCreateStep('building')}>CONFIRM + BUILD</button></div>
           </div>}
           {createStep === 'building' && <div className="building-line"><i /><span>BUILDING STORY</span><small>Reading attached sources…</small></div>}
         </section>
