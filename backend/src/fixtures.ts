@@ -84,7 +84,7 @@ export const fixtureEpisode: Episode = {
         sourceMessageId: 'msg_006',
         episodeId: 'episode_001',
         isPinned: false,
-        shouldntStand: false,
+        sourceChanged: false,
         aclRestricted: false,
       },
     ],
@@ -95,7 +95,7 @@ export const fixtureEpisode: Episode = {
         sourceMessageId: 'msg_003',
         episodeId: 'episode_001',
         isPinned: false,
-        shouldntStand: false,
+        sourceChanged: false,
         aclRestricted: false,
       },
       {
@@ -104,7 +104,7 @@ export const fixtureEpisode: Episode = {
         sourceMessageId: 'msg_002',
         episodeId: 'episode_001',
         isPinned: false,
-        shouldntStand: false,
+        sourceChanged: false,
         aclRestricted: false,
       },
       {
@@ -113,7 +113,7 @@ export const fixtureEpisode: Episode = {
         sourceMessageId: 'msg_004',
         episodeId: 'episode_001',
         isPinned: false,
-        shouldntStand: false,
+        sourceChanged: false,
         aclRestricted: true,
       },
     ],
@@ -124,7 +124,7 @@ export const fixtureEpisode: Episode = {
         sourceMessageId: 'msg_005',
         episodeId: 'episode_001',
         isPinned: false,
-        shouldntStand: false,
+        sourceChanged: false,
         aclRestricted: false,
       },
     ],
@@ -192,7 +192,7 @@ export class DataStore {
 
       for (const claim of allClaims) {
         if (claim.sourceMessageId === messageId && !claim.isPinned) {
-          claim.shouldntStand = true;
+          claim.sourceChanged = true;
         }
       }
     }
@@ -221,7 +221,7 @@ export class DataStore {
 
     claim.isPinned = !claim.isPinned;
     if (claim.isPinned) {
-      claim.shouldntStand = false;
+      claim.sourceChanged = false;
     }
     return true;
   }
@@ -240,7 +240,7 @@ export class DataStore {
       if (!claim.isPinned) {
         const msg = this.messages.get(claim.sourceMessageId);
         if (msg && (msg.isDeleted || msg.editHistory.length > 0)) {
-          claim.shouldntStand = true;
+          claim.sourceChanged = true;
         }
       }
     }

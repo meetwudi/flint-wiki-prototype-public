@@ -1,7 +1,7 @@
 import '../styles/globals.css';
 
 export const metadata = {
-  title: 'Flint Living Wiki v0',
+  title: 'Pricing for launch · Flint',
   description: 'Turn Slack into living wikis',
 };
 

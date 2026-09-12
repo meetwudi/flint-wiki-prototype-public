@@ -19,7 +19,7 @@ export interface Claim {
   sourceMessageId: string;
   episodeId: string;
   isPinned: boolean;
-  shouldntStand: boolean;
+  sourceChanged: boolean;
   aclRestricted: boolean;
   isStub?: boolean;
 }

@@ -5,3 +5,7 @@ build/
 *.log
 .env.local
 .DS_Store
+
+# Static build artifacts
+frontend/out/
+dist/
