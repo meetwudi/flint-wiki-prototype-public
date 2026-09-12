@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pricing for launch — Flint</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:#f4f5f7; --card:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --blue:#dbeafe; --blue-ink:#1e3a8a; --coral:#fecaca; --coral-ink:#7f1d1d;
+  --gray:#f3f4f6; --accent:#2563eb; --warn:#b45309;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.phone{max-width:430px;margin:0 auto;min-height:100vh;background:#fff;padding:0 0 96px}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
+.nav .brand{font-weight:600;font-size:16px}
+.nav .icons{display:flex;gap:14px;color:var(--muted);font-size:18px}
+.hero{padding:20px 16px 8px}
+.hero h1{font-size:28px;line-height:1.15;letter-spacing:-.02em;margin-bottom:6px}
+.hero .sub{color:var(--muted);font-size:15px;margin-bottom:14px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-size:12px;color:var(--muted);background:var(--gray);border-radius:999px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+.feed{padding:8px 16px 24px;display:flex;flex-direction:column;gap:12px}
+.card{border-radius:16px;padding:12px 14px;position:relative}
+.card.blue{background:var(--blue);color:var(--blue-ink)}
+.card.coral{background:var(--coral);color:var(--coral-ink)}
+.card.gray{background:var(--gray);color:var(--ink)}
+.card .meta{font-size:12px;opacity:.75;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.card .body{font-size:15px;line-height:1.45}
+.card .dig{margin-top:8px;font-size:12px;opacity:.8;cursor:pointer;display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:inherit;padding:0;min-height:auto}
+.card .dig:hover{text-decoration:underline}
+.divider{display:flex;align-items:center;gap:10px;color:var(--warn);font-size:12px;font-weight:600;margin:4px 0}
+.divider:before,.divider:after{content:"";flex:1;height:1px;background:#f59e0b55}
+.stub{color:var(--muted);font-style:italic}
+.ask{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(398px,calc(100% - 24px));background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.ask input{flex:1;border:0;outline:0;font:inherit;font-size:14px;background:transparent}
+.ask button{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.panel{display:none;margin-top:8px;padding:10px;border-radius:12px;background:rgba(255,255,255,.55);font-size:13px;line-height:1.4}
+.panel.open{display:block}
+.panel .src{margin:6px 0;padding:8px;border-radius:8px;background:rgba(255,255,255,.7)}
+.panel .src b{display:block;font-size:11px;opacity:.7;margin-bottom:2px}
+.demo{padding:0 16px 24px}
+.demo details{font-size:13px;color:var(--muted)}
+.demo summary{cursor:pointer;min-height:36px;display:flex;align-items:center}
+.demo .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.demo button{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="nav"><span>←</span><span class="brand">Flint</span><span class="icons">↗ ★ ⋯</span></div>
+  <div class="hero">
+    <h1>Pricing for launch</h1>
+    <p class="sub">How the team landed on a simple launch price.</p>
+    <div class="pills">
+      <span class="pill">📄 6 sources</span>
+      <span class="pill">👥 4 contributors</span>
+      <span class="pill">Last updated Sep 12, 2026</span>
+    </div>
+  </div>
+  <div class="feed" id="feed"></div>
+  <div class="demo">
+    <details>
+      <summary>Demo controls</summary>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="acl"/> Viewer has finance access</label>
+      <div class="row">
+        <button id="edit002">Edit CAC source</button>
+        <button id="del005">Delete $29 source</button>
+      </div>
+    </details>
+  </div>
+  <div class="ask">
+    <span>📚</span>
+    <input id="ask" placeholder="Ask about this decision…" />
+    <button id="askGo">Ask</button>
+  </div>
+</div>
+<script>
+const sources = {
+  mei: { who:'Mei', ch:'#pricing', when:'Sep 10', text:"We're launching with a simple usage-based model: free for small teams, then a paid plan. Decision locked at $49/mo.", color:'blue', replies:[] },
+  synth: { who:'Article synthesis', ch:'#product', when:'Sep 10', text:'The goal is to make Flint easy to try, easy to adopt, and easy to explain.', color:'gray', replies:[] },
+  javier: { who:'Javier', ch:'#customer-calls', when:'Sep 10', text:"People will pay for trusted knowledge, not more tools. Customers told us they're overwhelmed by yet another app.", color:'coral', replies:['Also: “single trusted source for answers.”','Also: “don’t make us babysit another wiki.”','Also: “pricing has to be explainable in one breath.”'] },
+  priya: { who:'Priya', ch:'#product', when:'Sep 10', text:'We considered more tiers, but complexity would slow us down. A simple plan helps us ship, learn, and iterate faster.', color:'blue', replies:[] },
+  daniel: { who:'Daniel', ch:'#security', when:'Sep 10', text:'Advanced permissions and SSO are not in the initial release.', color:'gray', acl:true, replies:[] },
+  sarah: { who:'Sarah', ch:'#product', when:'Sep 10', text:'We can revisit packaging after launch once we learn from early customers.', color:'coral', thread:'Earlier $29 idea was rejected on unit economics (Bob).', replies:[] },
+};
+let order = ['mei','synth','javier','CHANGED','priya','daniel','sarah'];
+let hasFinance=false;
+let sourceChanged={ mei:false, javier:false, priya:false, daniel:false, sarah:false, synth:false };
+// map demo actions onto claims
+let cacEdited=false, oldDeleted=false;
+
+function render(){
+  const feed=document.getElementById('feed');
+  feed.innerHTML='';
+  for(const id of order){
+    if(id==='CHANGED'){
+      if(cacEdited||oldDeleted){
+        const d=document.createElement('div'); d.className='divider'; d.textContent='Source changed'; feed.appendChild(d);
+      }
+      continue;
+    }
+    const s=sources[id];
+    const card=document.createElement('div');
+    card.className='card '+s.color;
+    let body=s.text;
+    if(s.acl && !hasFinance) body += ' <span class="stub">[Source exists — no access]</span>';
+    if(s.acl && hasFinance) body += ' Burn/runway notes available.';
+    if(id==='mei' && cacEdited) body += ' <span class="stub">(supporting CAC line updated)</span>';
+    if(id==='sarah' && oldDeleted) body += ' <span class="stub">(earlier $29 source removed)</span>';
+    const mark=(id==='mei'&&cacEdited)||(id==='sarah'&&oldDeleted);
+    card.innerHTML=`<div class="meta"><strong>${s.ch}</strong> ${s.who} · ${s.when}${mark?' · <span style="color:var(--warn)">Source changed</span>':''}</div>
+      <div class="body">${body}</div>
+      <button class="dig" data-id="${id}">▸ How we reasoned</button>
+      <div class="panel" id="p-${id}"></div>`;
+    feed.appendChild(card);
+  }
+  document.querySelectorAll('.dig').forEach(btn=>btn.onclick=()=>{
+    const id=btn.dataset.id; const s=sources[id]; const p=document.getElementById('p-'+id);
+    const open=p.classList.toggle('open');
+    btn.textContent=open?'▾ How we reasoned':'▸ How we reasoned';
+    if(!open) return;
+    if(s.acl && !hasFinance){ p.innerHTML='<div class="src"><b>Access</b>Source exists — no access</div>'; return; }
+    let html=`<div class="src"><b>How we got here</b>Pulled from ${s.ch} · ${s.who}</div>`;
+    html+=`<div class="src"><b>E1 · Primary</b>${s.text}</div>`;
+    if(s.thread) html+=`<div class="src"><b>E2 · Related</b>${s.thread}</div>`;
+    (s.replies||[]).forEach((r,i)=>html+=`<div class="src"><b>E${i+2} · Reply</b>${r}</div>`);
+    if(id==='mei') html+=`<div class="src"><b>E2 · CAC</b>${cacEdited?'Updated: need ≥ $55 to break even.':'Agree. CAC needs at least $40 to break even (Bob).'}</div>`;
+    p.innerHTML=html;
+  });
+}
+document.getElementById('acl').onchange=e=>{hasFinance=e.target.checked;render();};
+document.getElementById('edit002').onclick=()=>{cacEdited=true;render();};
+document.getElementById('del005').onclick=()=>{oldDeleted=true;render();};
+document.getElementById('askGo').onclick=()=>{
+  const q=document.getElementById('ask').value.trim()||'why $49?';
+  alert('Prototype ask: “'+q+'” — would dig the decision story + linked sources.');
+};
+render();
+</script>
+</body>
+</html>
