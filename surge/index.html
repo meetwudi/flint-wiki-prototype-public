@@ -3,208 +3,237 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Pricing for launch · Flint</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<title>Allocation checkup · Flint</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --bg:#0a0c0a; --panel:#101410; --elev:#161a16; --line:#1e2a1e;
-  --ink:#d6e0d6; --muted:#7a8a7a; --dim:#4a5a4a;
-  --green:#3ddc84; --green-dim:rgba(61,220,132,.12);
-  --blue:#5b9fd4; --blue-dim:rgba(91,159,212,.12);
-  --warn:#e0b060; --warn-dim:rgba(224,176,96,.12);
-  --err:#e06c75;
+  --canvas:#0a0a0f; --panel:#12121a; --elevated:#181822; --wash:#1c1c28;
+  --line:#2a2a3a; --line-strong:#3a3a50;
+  --ink:#ececf1; --body:#c4c4d4; --muted:#8b8fa3;
+  --accent:#8b7cf7; --accent-dim:rgba(139,124,247,.18);
+  --warn:#f0c674; --warn-dim:rgba(240,198,116,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  background:var(--bg);color:var(--ink);
-  -webkit-font-smoothing:antialiased;font-size:13px;line-height:1.5;
+body{font-family:Inter,-apple-system,sans-serif;background:var(--canvas);color:var(--ink);-webkit-font-smoothing:antialiased}
+.phone{max-width:430px;margin:0 auto;min-height:100vh;padding:0 0 110px;background:var(--canvas)}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.nav b{color:var(--ink);font-weight:600}
+.story{padding:20px 16px 8px}
+.kicker{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;font-weight:600}
+h1{font-size:24px;letter-spacing:-.03em;line-height:1.2;margin-bottom:6px}
+.lede{color:var(--muted);font-size:14px;margin-bottom:18px;line-height:1.45}
+.article{font-size:15px;line-height:1.65;color:var(--body)}
+.article p{margin:0 0 14px}
+.article .claim{
+  color:var(--ink);border-bottom:1px solid rgba(139,124,247,.45);
+  cursor:pointer;font-weight:500;
 }
-.shell{max-width:440px;margin:0 auto;min-height:100vh;padding:0 0 100px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
-.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;letter-spacing:.04em}
-.top .brand{color:var(--green);font-weight:600}
-.hero{padding:18px 14px 8px}
-.hero .path{color:var(--dim);font-size:11px;margin-bottom:8px}
-.hero h1{font-size:18px;font-weight:600;color:var(--green);letter-spacing:-.02em;margin-bottom:6px}
-.hero .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
-.meta{display:flex;flex-wrap:wrap;gap:8px}
-.meta span{font-size:10px;color:var(--dim);border:1px solid var(--line);padding:3px 7px;border-radius:2px}
-.block{margin:12px 14px;border:1px solid var(--line);background:var(--panel);border-radius:2px}
-.block .label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);padding:8px 10px 0;font-weight:600}
-.block .body{padding:8px 10px 12px;color:var(--ink);font-size:13px}
-.block .body strong{color:var(--green);font-weight:600}
-.changed{display:inline;color:var(--warn);font-size:10px;border-bottom:1px solid var(--warn);margin-left:6px;letter-spacing:.02em}
-.stub{color:var(--muted);font-style:italic}
-.dig-btn{width:100%;text-align:left;background:var(--elev);border:0;border-top:1px solid var(--line);color:var(--blue);font:inherit;font-size:11px;padding:8px 10px;cursor:pointer;letter-spacing:.04em}
-.dig-btn:hover{background:#1a201a}
-.dig-panel{display:none;border-top:1px solid var(--line);background:#0c100c;padding:8px 10px 10px}
-.dig-panel.open{display:block}
-.src{margin:6px 0;padding:8px;border:1px solid var(--line);background:var(--blue-dim);border-radius:2px;font-size:11px;color:var(--ink)}
-.src b{display:block;color:var(--blue);font-size:10px;letter-spacing:.06em;margin-bottom:3px;font-weight:600}
-.timeline{display:none;margin:0 14px 12px;border:1px solid var(--line);border-radius:2px;overflow:hidden}
-.timeline.open{display:block}
-.tl-toggle{margin:8px 14px;width:calc(100% - 28px);background:transparent;border:1px dashed var(--line);color:var(--muted);font:inherit;font-size:11px;padding:8px 10px;cursor:pointer;text-align:left;letter-spacing:.04em}
-.tl-toggle:hover{border-color:var(--dim);color:var(--ink)}
-.card{padding:10px;border-bottom:1px solid var(--line);background:var(--panel)}
-.card:last-child{border-bottom:0}
-.card .ch{color:var(--green);font-size:10px;margin-bottom:4px}
-.card .who{color:var(--dim);font-size:10px}
-.card .txt{margin-top:4px;font-size:12px}
-.ask{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:min(412px,calc(100% - 28px));background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:8px 10px;display:flex;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-.ask input{flex:1;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:12px}
-.ask input::placeholder{color:var(--dim)}
-.ask button{border:1px solid var(--green);background:var(--green-dim);color:var(--green);font:inherit;font-size:11px;padding:6px 10px;cursor:pointer;letter-spacing:.04em}
-.demo{margin:8px 14px 24px;color:var(--dim);font-size:11px}
+.article .claim.changed{border-bottom-color:var(--warn);color:var(--warn)}
+.article .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;color:var(--ink)}
+.inline-note{display:none;margin:8px 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--elevated);font-size:12px;line-height:1.45;color:var(--muted)}
+.inline-note.open{display:block}
+.inline-note b{display:block;color:var(--accent);font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.inline-note .src{margin-top:6px;padding:8px;border-radius:4px;background:var(--accent-dim);color:var(--body);font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+.stub{color:var(--muted);font-style:italic;font-size:13px}
+.mark{color:var(--warn);font-size:11px;border-bottom:1px solid var(--warn);margin-left:4px;font-weight:600}
+.suggest{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.suggest h2{font-size:15px;color:var(--ink);margin-bottom:6px}
+.suggest .mix{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);margin-bottom:8px}
+.suggest ul{padding-left:0;list-style:none}
+.suggest li{font-size:13px;color:var(--body);padding:3px 0 3px 12px;position:relative}
+.suggest li:before{content:"";position:absolute;left:0;top:10px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.suggest .caution{margin-top:8px;font-size:11px;color:var(--muted)}
+.refines{margin:12px 0}
+.refine{margin:8px 0;padding:10px 12px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
+.refine .q{font-size:12px;color:var(--ink);font-weight:500}
+.refine .a{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
+.rails{margin:8px 16px 16px}
+.rails summary{cursor:pointer;font-size:12px;color:var(--muted);padding:8px 0;list-style:none}
+.rails summary::-webkit-details-marker{display:none}
+.rails .lane{margin-top:8px}
+.rails .lane h3{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.rails .item{font-size:12px;color:var(--body);padding:6px 8px;border:1px solid var(--line);border-radius:4px;margin-bottom:4px;background:var(--panel)}
+.rails .item span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.rails button.use{margin-top:4px;font:inherit;font-size:11px;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:4px;padding:4px 8px;cursor:pointer}
+.ask{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:min(398px,calc(100% - 24px));background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.45)}
+.ask input{flex:1;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:14px}
+.ask input::placeholder{color:var(--muted)}
+.ask button{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.demo{margin:0 16px 24px;font-size:12px;color:var(--muted)}
 .demo summary{cursor:pointer;padding:6px 0}
 .demo .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.demo button,.demo label{font:inherit;font-size:11px;color:var(--muted);border:1px solid var(--line);background:var(--elev);padding:5px 8px;cursor:pointer;border-radius:2px}
+.demo button,.demo label{font:inherit;font-size:11px;border:1px solid var(--line);background:var(--elevated);color:var(--muted);padding:5px 8px;border-radius:4px;cursor:pointer}
 .demo label{display:inline-flex;gap:6px;align-items:center}
-.prompt{color:var(--green);margin-right:4px}
 </style>
 </head>
 <body>
-<div class="shell">
-  <div class="top"><span class="brand">flint › wiki</span><span>v0 · dry-run</span></div>
-  <div class="hero">
-    <div class="path">~/topics/pricing-for-launch</div>
-    <h1>Pricing for launch</h1>
-    <p class="sub">How the team landed on a simple launch price.</p>
-    <div class="meta">
-      <span>6 sources</span><span>4 contributors</span><span>updated Sep 12</span>
+<div class="phone">
+  <div class="nav"><span>← Flint</span><b>Brief</b><span>···</span></div>
+  <div class="story">
+    <div class="kicker">Allocation checkup · example data</div>
+    <h1>Your mix is fine — a little US-heavy</h1>
+    <p class="lede">Moderate risk, 10-year horizon. Sample mix only — not live broker holdings.</p>
+
+    <div class="article" id="article">
+      <p>
+        We assumed <span class="claim" data-dig="d1">moderate risk and a 10-year horizon</span><span id="m1" class="mark" hidden>Source changed</span>,
+        with a current mix of <span class="mono">VTI 60% / BND 30% / cash 10%</span>.
+        No cost basis, tax bracket, or near-term cash need on file.
+      </p>
+      <div class="inline-note" id="d1"></div>
+
+      <p>
+        The concentration sits in the equity sleeve:
+        <span class="claim" data-dig="d2">VTI is almost all US</span>, and the top names drive a large slice of that sleeve.
+        BND fell with rates in 2022 — ballast, not a cash substitute.
+        Cash at 10% is idle for a decade-long plan.
+      </p>
+      <div class="inline-note" id="d2"></div>
+
+      <p>
+        What we’d change is small:
+        <span class="claim" data-dig="d3">trim cash to ~5% and add VXUS ~10% from VTI</span>,
+        leave BND as ballast.
+        <span id="acl" class="stub"> Employer stock exposure: [Source exists — no access]</span>
+      </p>
+      <div class="inline-note" id="d3"></div>
     </div>
+
+    <div class="suggest" id="suggest">
+      <h2>Trim cash. Add a small international sleeve.</h2>
+      <div class="mix">VTI 50% / VXUS 10% / BND 30% / cash 5%</div>
+      <ul>
+        <li>Cash 10% → 5%.</li>
+        <li>VXUS 10%, funded from VTI.</li>
+        <li>BND stays 30%.</li>
+        <li>Fits moderate risk, 10 years.</li>
+      </ul>
+      <p class="caution">Example data. Did not pull live broker holdings.</p>
+    </div>
+
+    <div class="refines" id="refines"></div>
   </div>
 
-  <div class="block" id="call">
-    <div class="label">The call</div>
-    <div class="body">
-      Launch with one simple paid plan at <strong>$49/mo</strong> (free for small teams) — not a multi-tier pack.
-      <span id="callMark" class="changed" hidden>Source changed</span>
+  <details class="rails">
+    <summary>▸ Used · Skipped · Don’t know yet</summary>
+    <div class="lane">
+      <h3>Used</h3>
+      <div class="item">Moderate risk, 10 years<span>From the sample situation.</span></div>
+      <div class="item">VTI / BND / cash mix<span>60% / 30% / 10%.</span></div>
+      <div class="item">US concentration<span>VTI is the equity sleeve — US only.</span></div>
     </div>
-    <button class="dig-btn" data-panel="p-call">▸ How we reasoned</button>
-    <div class="dig-panel" id="p-call"></div>
-  </div>
-
-  <div class="block">
-    <div class="label">Why it mattered</div>
-    <div class="body">
-      Customers will pay for trusted knowledge, not another tool. A simple plan ships faster, stays explainable in one breath, and lets us learn before packaging gets fancy.
+    <div class="lane">
+      <h3>Skipped</h3>
+      <div class="item">Tax lots<span>No cost basis.</span>
+        <button class="use" data-skip="s1">Use something we skipped</button></div>
+      <div class="item">Live broker holdings<span>Not connected.</span>
+        <button class="use" data-skip="s2">Use something we skipped</button></div>
+      <div class="item">International from the start<span>Started with VTI only.</span>
+        <button class="use" data-skip="s3">Use something we skipped</button></div>
     </div>
-    <button class="dig-btn" data-panel="p-why">▸ How we reasoned</button>
-    <div class="dig-panel" id="p-why"></div>
-  </div>
-
-  <div class="block">
-    <div class="label">What no longer belongs</div>
-    <div class="body" id="nolonger">
-      Multi-tier packaging and the earlier <strong>$29</strong> idea — cut on unit economics and launch speed.
-      Advanced permissions / SSO stay out of v0.
-      <span id="aclStub" class="stub"> [Source exists — no access]</span>
-      <span id="delMark" class="changed" hidden>Source changed</span>
+    <div class="lane">
+      <h3>Don’t know yet</h3>
+      <div class="item">Cost basis &amp; tax bracket<span>Needed for any harvest.</span></div>
+      <div class="item">Cash need in 12 months<span>Could make 5% cash too thin.</span></div>
+      <div class="item" id="unk-employer">Employer stock<span>Not disclosed.</span></div>
     </div>
-    <button class="dig-btn" data-panel="p-no">▸ How we reasoned</button>
-    <div class="dig-panel" id="p-no"></div>
-  </div>
-
-  <button class="tl-toggle" id="tlToggle">▸ Sources &amp; timeline <span style="color:var(--dim)">(optional dig)</span></button>
-  <div class="timeline" id="timeline"></div>
+  </details>
 
   <div class="demo">
     <details>
       <summary>demo controls</summary>
-      <label><input type="checkbox" id="acl"/> viewer has finance access</label>
+      <label><input type="checkbox" id="aclToggle"/> viewer has HR access</label>
       <div class="row">
-        <button id="edit002">edit CAC source</button>
-        <button id="del005">delete $29 source</button>
+        <button id="editAssump">edit risk assumption</button>
+        <button id="angle">try another angle</button>
       </div>
     </details>
   </div>
 
   <div class="ask">
-    <span class="prompt">›</span>
-    <input id="ask" placeholder="ask about this decision…" />
-    <button id="askGo">ask</button>
+    <input id="ask" placeholder="Ask about this brief…" />
+    <button id="askGo">Ask</button>
   </div>
 </div>
 <script>
-let hasFinance=false, cacEdited=false, oldDeleted=false;
+const digs = {
+  d1: `<b>How we reasoned</b>
+    <div class="src"><b>E1 · Assumed</b>Moderate risk, 10 years. Sample mix VTI 60 / BND 30 / cash 10.</div>
+    <div class="src"><b>E2 · Not used</b>Did not pull live broker holdings.</div>
+    <div class="src"><b>E3 · Unknown</b>No cost basis, tax bracket, or upcoming cash need.</div>`,
+  d2: `<b>How we reasoned</b>
+    <div class="src"><b>E1 · Concentration</b>VTI ~60% — almost all US. Top 10 names drive a large slice.</div>
+    <div class="src"><b>E2 · Bonds</b>BND fell with rates in 2022; not a cash substitute.</div>
+    <div class="src"><b>E3 · Cash</b>10% cash is idle on a 10-year horizon.</div>`,
+  d3: `<b>How we reasoned</b>
+    <div class="src"><b>E1 · Move</b>Trim cash 10% → 5%. Add VXUS ~10% from VTI.</div>
+    <div class="src"><b>E2 · Leave</b>BND stays ballast at 30%.</div>
+    <div class="src"><b>E3 · Caution</b>Example numbers only — not advice.</div>`,
+};
+let edited=false, hasHR=false;
 
-const feed = [
-  {id:'mei', ch:'#pricing', who:'Mei', when:'Sep 10', text:"We're launching with a simple usage-based model: free for small teams, then a paid plan. Decision locked at $49/mo."},
-  {id:'synth', ch:'#product', who:'synthesis', when:'Sep 10', text:'The goal is to make Flint easy to try, easy to adopt, and easy to explain.'},
-  {id:'javier', ch:'#customer-calls', who:'Javier', when:'Sep 10', text:"People will pay for trusted knowledge, not more tools. Customers told us they're overwhelmed by yet another app.", replies:['single trusted source for answers','don’t make us babysit another wiki','pricing has to be explainable in one breath']},
-  {id:'priya', ch:'#product', who:'Priya', when:'Sep 10', text:'We considered more tiers, but complexity would slow us down. A simple plan helps us ship, learn, and iterate faster.'},
-  {id:'daniel', ch:'#security', who:'Daniel', when:'Sep 10', text:'Advanced permissions and SSO are not in the initial release.', acl:true},
-  {id:'sarah', ch:'#product', who:'Sarah', when:'Sep 10', text:'We can revisit packaging after launch once we learn from early customers.', thread:'Earlier $29 idea was rejected on unit economics (Bob).'},
-];
-
-function evidence(html){return `<div class="src">${html}</div>`;}
-
-function fillDigs(){
-  const cac = cacEdited ? 'Updated: need ≥ $55 to break even.' : 'Agree. CAC needs at least $40 to break even (Bob).';
-  document.getElementById('p-call').innerHTML =
-    evidence('<b>E1 · Primary · #pricing · Mei</b>Decision locked at $49/mo — free for small teams, then one paid plan.') +
-    evidence('<b>E2 · CAC · Bob</b>'+cac) +
-    evidence('<b>E3 · #product · Priya</b>More tiers would slow launch; simple plan ships and learns faster.');
-  document.getElementById('p-why').innerHTML =
-    evidence('<b>E1 · #customer-calls · Javier</b>People will pay for trusted knowledge, not more tools.') +
-    evidence('<b>E2 · Replies</b>single trusted source · don’t babysit another wiki · explainable in one breath') +
-    evidence('<b>E3 · synthesis</b>Easy to try, adopt, and explain.');
-  let no =
-    evidence('<b>E1 · #product · Sarah</b>Revisit packaging after launch.') +
-    evidence('<b>E2 · Related</b>Earlier $29 idea rejected on unit economics (Bob).');
-  if(hasFinance) no += evidence('<b>E3 · #security · Daniel</b>Advanced permissions and SSO not in initial release. Burn/runway notes available.');
-  else no += evidence('<b>E3 · Access</b>Source exists — no access');
-  document.getElementById('p-no').innerHTML = no;
-}
-
-function renderTimeline(){
-  const tl=document.getElementById('timeline');
-  tl.innerHTML='';
-  feed.forEach(s=>{
-    const card=document.createElement('div'); card.className='card';
-    let txt=s.text;
-    if(s.acl && !hasFinance) txt += ' <span class="stub">[Source exists — no access]</span>';
-    if(s.acl && hasFinance) txt += ' Burn/runway notes available.';
-    if(s.id==='mei' && cacEdited) txt += ' <span class="stub">(CAC line updated)</span>';
-    if(s.id==='sarah' && oldDeleted) txt += ' <span class="stub">(earlier $29 source removed)</span>';
-    const mark=(s.id==='mei'&&cacEdited)||(s.id==='sarah'&&oldDeleted);
-    card.innerHTML=`<div class="ch">${s.ch}</div><div class="who">${s.who} · ${s.when}${mark?' <span class="changed">Source changed</span>':''}</div><div class="txt">${txt}</div>`;
-    tl.appendChild(card);
-    if(s.id==='javier' && (cacEdited||oldDeleted)){
-      const d=document.createElement('div'); d.className='card'; d.style.color='var(--warn)'; d.style.fontSize='10px'; d.style.letterSpacing='.06em';
-      d.textContent='── Source changed ──'; tl.appendChild(d);
-    }
-  });
-}
-
-function refreshMarks(){
-  document.getElementById('callMark').hidden = !cacEdited;
-  document.getElementById('delMark').hidden = !oldDeleted;
-  document.getElementById('aclStub').hidden = hasFinance;
-  fillDigs();
-  renderTimeline();
-}
-
-document.querySelectorAll('.dig-btn').forEach(btn=>{
-  btn.onclick=()=>{
-    const p=document.getElementById(btn.dataset.panel);
-    const open=p.classList.toggle('open');
-    btn.textContent = (open?'▾':'▸') + ' How we reasoned';
+document.querySelectorAll('.claim').forEach(el=>{
+  el.onclick=()=>{
+    const id=el.dataset.dig; const n=document.getElementById(id);
+    const open=n.classList.toggle('open');
+    if(open) n.innerHTML=digs[id];
   };
 });
-document.getElementById('tlToggle').onclick=()=>{
-  const tl=document.getElementById('timeline');
-  const open=tl.classList.toggle('open');
-  document.getElementById('tlToggle').textContent = (open?'▾':'▸') + ' Sources & timeline (optional dig)';
-};
-document.getElementById('acl').onchange=e=>{hasFinance=e.target.checked;refreshMarks();};
-document.getElementById('edit002').onclick=()=>{cacEdited=true;refreshMarks();};
-document.getElementById('del005').onclick=()=>{oldDeleted=true;refreshMarks();};
+
+function answer(q){
+  const s=q.toLowerCase();
+  if(/drawdown|drop|loss/.test(s)) return 'A 20% VTI drop is about −12% of a 60/30/10 mix. BND does not fully offset that.';
+  if(/tax|cost basis|harvest/.test(s)) return 'No cost basis on file. Can’t size a tax harvest.';
+  if(/broker|holding|live/.test(s)) return 'Did not pull live broker holdings. Mix is the sample: VTI / BND / cash.';
+  if(/internat|vxus|ex-us/.test(s)) return 'VTI is US only. VXUS ~10% cuts the US concentration without changing the 10-year idea.';
+  if(/cash|buffer/.test(s)) return 'Cash at 10% is a drag on a 10-year horizon. 5% still covers a rebalance.';
+  if(/bond|bnd|duration/.test(s)) return 'BND duration is ~6 years. It fell with rates in 2022. It is ballast, not a cash bin.';
+  return 'On this brief: trim cash, add a small VXUS sleeve from VTI, leave BND. ('+q.trim()+')';
+}
+
+function appendRefine(q,a){
+  const box=document.getElementById('refines');
+  const d=document.createElement('div'); d.className='refine';
+  d.innerHTML=`<div class="q">Q · ${q}</div><div class="a">${a}</div>`;
+  box.appendChild(d);
+  d.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
 document.getElementById('askGo').onclick=()=>{
-  const q=document.getElementById('ask').value.trim()||'why $49?';
-  alert('› '+q+'\\n(prototype) would dig the call + linked sources');
+  const q=document.getElementById('ask').value.trim(); if(!q) return;
+  appendRefine(q, answer(q));
+  document.getElementById('ask').value='';
 };
-refreshMarks();
+document.getElementById('ask').onkeydown=e=>{ if(e.key==='Enter') document.getElementById('askGo').click(); };
+
+document.getElementById('aclToggle').onchange=e=>{
+  hasHR=e.target.checked;
+  document.getElementById('acl').textContent = hasHR
+    ? ' Employer stock: none disclosed in sample — treated as unknown.'
+    : ' Employer stock exposure: [Source exists — no access]';
+};
+document.getElementById('editAssump').onclick=()=>{
+  edited=true;
+  document.getElementById('m1').hidden=false;
+  document.querySelector('[data-dig="d1"]').classList.add('changed');
+  digs.d1 = `<b>How we reasoned</b>
+    <div class="src"><b>E1 · Updated</b>Risk assumption edited — brief may need refresh.</div>
+    <div class="src"><b>E2 · Mix</b>Still VTI 60 / BND 30 / cash 10 until you ask again.</div>`;
+};
+document.getElementById('angle').onclick=()=>{
+  appendRefine('Try another angle', 'If risk were cautious: would not trim BND; cash can stay at 10%. Main path unchanged — this sits beside it.');
+};
+document.querySelectorAll('.use').forEach(btn=>{
+  btn.onclick=()=>{
+    const map={
+      s1:'Still no cost basis. Harvest size would be a guess — would only apply in a taxable account.',
+      s2:'Broker is not connected. Mix stays the sample: VTI 60 / BND 30 / cash 10.',
+      s3:'Fork: start with VXUS already in — VTI 50 / VXUS 10 / BND 30 / cash 10. No later “add VXUS” move.',
+    };
+    appendRefine('Used something we skipped', map[btn.dataset.skip]);
+    btn.disabled=true; btn.textContent='Pulled into brief';
+  };
+});
 </script>
 </body>
 </html>
