@@ -1,302 +1,139 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Episode, Claim, SlackMessage } from '../lib/types';
-import {
-  fetchEpisode,
-  fetchMessage,
-  demoEdit,
-  demoDelete,
-  toggleClaimPin,
-  reprojectEpisode,
-} from '../lib/api';
+import { FormEvent, useState } from 'react';
+
+type Screen = 'stories' | 'connect' | 'new' | 'brief';
+type CreateStep = 'prompt' | 'spine' | 'building';
+type DigTab = 'used' | 'skipped' | 'unknown';
+
+const storyRows = [
+  { title: 'Allocation checkup', detail: 'Where the team is spending time, and what changed.', state: 'READY', age: '2h ago', open: true },
+  { title: 'Pricing for launch', detail: 'The launch price and the reasoning behind it.', state: 'UPDATING', age: '6m ago', open: true },
+  { title: 'Q4 research themes', detail: 'Signals emerging from customer research.', state: 'BUILDING', age: '34%', open: false },
+];
+
+const sourceGroups = {
+  used: [
+    { id: 'U1', author: '@maya', time: 'Today 09:14', text: 'The infrastructure work is necessary, but it has pulled two people away from activation for three weeks.' },
+    { id: 'U2', author: '@jon', time: 'Today 10:02', text: 'Let’s move one engineer back to activation after the migration lands Friday.' },
+  ],
+  skipped: [
+    { id: 'S1', author: '@lee', time: 'Yesterday 16:41', text: 'Lunch is arriving at 12:30.' },
+  ],
+  unknown: [
+    { id: 'X1', author: 'private channel', time: 'Today 08:50', text: '[Source exists — no access]' },
+  ],
+};
 
 export default function HomePage() {
-  const [episode, setEpisode] = useState<Episode | null>(null);
-  const [hasFinanceAccess, setHasFinanceAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [sourceMessage, setSourceMessage] = useState<SlackMessage | null>(null);
-  const [messageAccessDenied, setMessageAccessDenied] = useState(false);
-  const [editingMessage, setEditingMessage] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const [screen, setScreen] = useState<Screen>('stories');
+  const [createStep, setCreateStep] = useState<CreateStep>('prompt');
+  const [prompt, setPrompt] = useState('@channel #product Where are we over-investing, and what should move?');
+  const [digTab, setDigTab] = useState<DigTab>('used');
+  const [digOpen, setDigOpen] = useState(false);
+  const [sourceChanged, setSourceChanged] = useState(true);
+  const [financeAccess, setFinanceAccess] = useState(false);
+  const [ask, setAsk] = useState('');
+  const [refinement, setRefinement] = useState('');
 
-  const PAGE_ID = 'episode_001';
-
-  useEffect(() => {
-    loadEpisode();
-  }, [hasFinanceAccess]);
-
-  async function loadEpisode() {
-    setLoading(true);
-    try {
-      const data = await fetchEpisode(PAGE_ID, hasFinanceAccess);
-      setEpisode(data);
-    } catch (error) {
-      console.error('Failed to load page:', error);
-    } finally {
-      setLoading(false);
-    }
+  function go(next: Screen) {
+    setScreen(next);
+    if (next === 'new') setCreateStep('prompt');
+    window.scrollTo(0, 0);
   }
 
-  async function handleDigClaim(claim: Claim) {
-    setSelectedClaim(claim);
-    setMessageAccessDenied(false);
-    setSourceMessage(null);
-
-    if (claim.isStub) {
-      setMessageAccessDenied(true);
-      return;
-    }
-
-    try {
-      const response = await fetchMessage(claim.sourceMessageId, hasFinanceAccess);
-      if (response.ok) {
-        const message = await response.json();
-        setSourceMessage(message);
-      } else if (response.status === 403) {
-        setMessageAccessDenied(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch message:', error);
-    }
-  }
-
-  function closeModal() {
-    setSelectedClaim(null);
-    setSourceMessage(null);
-    setMessageAccessDenied(false);
-    setEditingMessage(null);
-    setEditText('');
-  }
-
-  async function handleEditMessage(messageId: string) {
-    if (!editText.trim()) return;
-    await demoEdit(messageId, editText);
-    setEditingMessage(null);
-    setEditText('');
-    closeModal();
-    await loadEpisode();
-  }
-
-  async function handleDeleteMessage(messageId: string) {
-    await demoDelete(messageId);
-    closeModal();
-    await loadEpisode();
-  }
-
-  async function handleTogglePin(claim: Claim) {
-    await toggleClaimPin(episode!.id, claim.id);
-    await loadEpisode();
-  }
-
-  async function handleReproject() {
-    await reprojectEpisode(PAGE_ID);
-    await loadEpisode();
-  }
-
-  function renderClaim(claim: Claim) {
-    const classNames = ['claim'];
-    if (claim.shouldntStand) classNames.push('shouldnt-stand');
-    if (claim.isPinned) classNames.push('pinned');
-    if (claim.isStub) classNames.push('acl-stub');
-
-    return (
-      <div key={claim.id} className={classNames.join(' ')}>
-        <div className={claim.isStub ? 'claim-text claim-stub-text' : 'claim-text'}>
-          {claim.text}
-          {claim.shouldntStand && (
-            <span className="badge badge-warning">Shouldn't stand</span>
-          )}
-          {claim.isPinned && <span className="badge badge-pin">Pinned</span>}
-          {claim.isStub && <span className="badge badge-error">Source exists — no access</span>}
-        </div>
-        <div className="claim-actions">
-          <button className="btn btn-small" onClick={() => handleDigClaim(claim)}>
-            Dig → walk-back
-          </button>
-          <button className="btn btn-small" onClick={() => handleTogglePin(claim)}>
-            {claim.isPinned ? 'Unpin' : 'Pin'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return <div className="loading">Loading page...</div>;
-  }
-
-  if (!episode) {
-    return <div className="loading">Page not found</div>;
+  function submitAsk(event: FormEvent) {
+    event.preventDefault();
+    if (!ask.trim()) return;
+    setRefinement(`Reader focus: ${ask.trim()}`);
+    setAsk('');
   }
 
   return (
-    <div className="container">
-      <div className="controls">
-        <h3>Demo Controls</h3>
-        <div className="controls-group">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={hasFinanceAccess}
-              onChange={(e) => setHasFinanceAccess(e.target.checked)}
-            />
-            <span>Viewer has finance access (ACL demo)</span>
-          </label>
-        </div>
-        <button className="btn btn-primary" onClick={handleReproject}>
-          Re-synthesize page
-        </button>
-      </div>
+    <main className="shell">
+      <nav className="terminal-bar" aria-label="Flint navigation">
+        <button className="path" onClick={() => go('stories')}><span>~/wiki</span> $</button>
+        <span className="route">{screen === 'new' ? 'new-story' : screen}</span>
+        <span className="live"><i /> LIVE</span>
+      </nav>
 
-      <div className="header">
-        <h1>{episode.title}</h1>
-        <div className="header-meta">
-          #flint-v0-fixture · Last updated:{' '}
-          {new Date(episode.updatedAt).toLocaleString()}
-        </div>
-      </div>
-
-      <div className="section">
-        <h2 className="section-title">The call</h2>
-        {episode.claims.theCall.map(renderClaim)}
-      </div>
-
-      <div className="section">
-        <h2 className="section-title">Why it mattered</h2>
-        {episode.claims.whyItMattered.map(renderClaim)}
-      </div>
-
-      <div className="section">
-        <h2 className="section-title">What no longer belongs</h2>
-        {episode.claims.whatNoLongerBelongs.map(renderClaim)}
-      </div>
-
-      {selectedClaim && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Walk-back to source</h3>
-            <div className="modal-content">
-              {messageAccessDenied ? (
-                <div className="message-box message-deleted">
-                  <div className="message-meta">Access Denied</div>
-                  <div className="message-text">
-                    <strong>Source exists — no access</strong>
-                    <br />
-                    This message contains restricted financial information. Toggle "Viewer has
-                    finance access" above to view.
-                  </div>
-                </div>
-              ) : sourceMessage ? (
-                <>
-                  <div
-                    className={`message-box ${
-                      sourceMessage.isDeleted
-                        ? 'message-deleted'
-                        : sourceMessage.editHistory.length > 0
-                        ? 'message-edited'
-                        : ''
-                    }`}
-                  >
-                    <div className="message-meta">
-                      <strong>@{sourceMessage.userName}</strong> ·{' '}
-                      {new Date(sourceMessage.timestamp).toLocaleString()}
-                      {sourceMessage.isDeleted && ' · DELETED'}
-                      {sourceMessage.editHistory.length > 0 && ' · EDITED'}
-                    </div>
-                    <div className="message-text">
-                      {sourceMessage.isDeleted ? (
-                        <em>[This message was deleted]</em>
-                      ) : (
-                        sourceMessage.text
-                      )}
-                    </div>
-                    {sourceMessage.editHistory.length > 0 && (
-                      <div style={{ marginTop: '8px', fontSize: '13px', color: '#666' }}>
-                        <details>
-                          <summary style={{ cursor: 'pointer' }}>
-                            Edit history ({sourceMessage.editHistory.length})
-                          </summary>
-                          {sourceMessage.editHistory.map((edit, i) => (
-                            <div key={i} style={{ marginTop: '8px', paddingLeft: '8px' }}>
-                              <div style={{ fontSize: '12px', color: '#999' }}>
-                                {new Date(edit.editedAt).toLocaleString()}
-                              </div>
-                              <div>{edit.text}</div>
-                            </div>
-                          ))}
-                        </details>
-                      </div>
-                    )}
-                  </div>
-
-                  {!sourceMessage.isDeleted && (
-                    <div className="edit-form">
-                      <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>Demo: Edit message</h4>
-                      {editingMessage === sourceMessage.id ? (
-                        <>
-                          <textarea
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            placeholder="New message text..."
-                          />
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className="btn btn-primary"
-                              onClick={() => handleEditMessage(sourceMessage.id)}
-                            >
-                              Save Edit
-                            </button>
-                            <button
-                              className="btn"
-                              onClick={() => {
-                                setEditingMessage(null);
-                                setEditText('');
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <button
-                          className="btn"
-                          onClick={() => {
-                            setEditingMessage(sourceMessage.id);
-                            setEditText(sourceMessage.text);
-                          }}
-                        >
-                          Edit Message
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {!sourceMessage.isDeleted && (
-                    <div style={{ marginTop: '12px' }}>
-                      <button
-                        className="btn"
-                        style={{ background: '#fee2e2', borderColor: '#fecaca' }}
-                        onClick={() => handleDeleteMessage(sourceMessage.id)}
-                      >
-                        Demo: Delete Message
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="loading">Loading message...</div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn" onClick={closeModal}>
-                Close
+      {screen === 'stories' && (
+        <section className="screen stories-screen">
+          <header className="screen-header"><p>// STORIES</p><h1>Living briefs</h1><span>Slack and Docs, kept current.</span></header>
+          <div className="story-list">
+            {storyRows.map((story) => (
+              <button key={story.title} className="story-row" onClick={() => story.open && go('brief')} disabled={!story.open}>
+                <span className={`state state-${story.state.toLowerCase()}`}>{story.state}</span>
+                <span className="story-copy"><strong>{story.title}</strong><small>{story.detail}</small></span>
+                <span className="story-age">{story.age}</span><span className="arrow">›</span>
               </button>
-            </div>
+            ))}
           </div>
-        </div>
+          <button className="primary-command" onClick={() => go('new')}>+ NEW STORY</button>
+        </section>
       )}
-    </div>
+
+      {screen === 'connect' && (
+        <section className="screen connect-screen">
+          <header className="screen-header"><p>// CONNECT</p><h1>Sources</h1><span>Give Flint a place to read.</span></header>
+          <div className="connector-list">
+            <div className="connector"><span className="connector-icon slack">#</span><span><strong>Slack</strong><small>Channels and threads</small></span><button>CONNECTED</button></div>
+            <div className="connector"><span className="connector-icon docs">D</span><span><strong>Google Docs</strong><small>Documents you mention</small></span><button>CONNECT</button></div>
+          </div>
+          <p className="security-note">// Flint only reads sources you attach to a story. Existing access controls remain in place.</p>
+        </section>
+      )}
+
+      {screen === 'new' && (
+        <section className="screen new-screen">
+          <header className="screen-header"><p>// NEW STORY</p><h1>What should stay true?</h1><span>Attach context, then ask for one thing.</span></header>
+          {createStep === 'prompt' && <form className="create-form" onSubmit={(e) => { e.preventDefault(); if (prompt.trim()) setCreateStep('spine'); }}>
+            <label htmlFor="story-prompt">ONE LINE, WITH SOURCES</label>
+            <textarea id="story-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} autoFocus />
+            <div className="mention-help"><code>@channel</code> Slack channel <code>@doc</code> or <code>@document</code> Google Doc</div>
+            <button className="primary-command" type="submit">SHARPEN →</button>
+          </form>}
+          {createStep === 'spine' && <div className="spine">
+            <p className="spine-label">SHARPENED SPINE</p>
+            <blockquote>Show where product and engineering time is concentrated, what is being crowded out, and the allocation change the team has agreed to.</blockquote>
+            <div className="attached"><span>@channel #product</span><span>12 threads</span></div>
+            <div className="spine-actions"><button onClick={() => setCreateStep('prompt')}>← EDIT</button><button className="primary-command" onClick={() => setCreateStep('building')}>CONFIRM + BUILD</button></div>
+          </div>}
+          {createStep === 'building' && <div className="building-line"><i /><span>BUILDING STORY</span><small>Reading attached sources…</small></div>}
+        </section>
+      )}
+
+      {screen === 'brief' && (
+        <section className="screen brief-screen">
+          <header className="brief-header"><p>// LIVING BRIEF · #PRODUCT</p><h1>Allocation checkup</h1><div className="meta"><span>STATUS: CURRENT</span><span>UPDATED: 2H AGO</span><span>OWNER: MAYA</span></div></header>
+          <article className="story-prose">
+            <p className="lead">The team is over-investing in infrastructure relative to its immediate goal: improving activation before the next planning cycle.</p>
+            <p>Three weeks of migration work pulled two engineers from activation. The migration still needs to land, but the team agreed that one engineer will return to activation after Friday rather than rolling directly into the next infrastructure project. <button className="evidence-link" onClick={() => setDigOpen(!digOpen)}>› E1 DIG</button>{sourceChanged && <span className="source-changed">! Source changed 2h ago</span>}</p>
+            <p>That shift protects the work most closely tied to the quarter’s outcome without abandoning reliability. The remaining infrastructure owner will finish the migration and document follow-up work for the next cycle. <button className="evidence-link" onClick={() => setDigOpen(!digOpen)}>› E2 DIG</button></p>
+            <p>The budget impact is supported by a restricted finance note: <span className="acl-stub">{financeAccess ? 'the change stays within the approved headcount plan.' : '[Source exists — no access]'}</span></p>
+            {refinement && <p className="reader-focus"><span>REFINED</span>{refinement}</p>}
+          </article>
+
+          {digOpen && <aside className="dig-panel">
+            <div className="dig-title"><span>EVIDENCE DIG</span><button onClick={() => setDigOpen(false)}>×</button></div>
+            <p className="how">The recommendation combines the migration timeline with the team’s activation commitment.</p>
+            <div className="dig-tabs" role="tablist">
+              {(['used', 'skipped', 'unknown'] as DigTab[]).map((tab) => <button key={tab} className={digTab === tab ? 'active' : ''} onClick={() => setDigTab(tab)}>{tab.toUpperCase()} <b>{sourceGroups[tab].length}</b></button>)}
+            </div>
+            <div className="quote-stack">{sourceGroups[digTab].map((source) => <blockquote key={source.id}><header><code>{source.id}</code><strong>{source.author}</strong><span>{source.time}</span></header><p>{source.text}</p></blockquote>)}</div>
+          </aside>}
+
+          <form className="ask-bar" onSubmit={submitAsk}><span>&gt;</span><input value={ask} onChange={(e) => setAsk(e.target.value)} aria-label="Ask a question about this page" placeholder="Ask a question about this page…" /><button>ASK ↵</button></form>
+
+          <details className="demo-controls"><summary>DEMO_CONTROLS</summary><div><label><input type="checkbox" checked={financeAccess} onChange={(e) => setFinanceAccess(e.target.checked)} /> FINANCE_ACCESS</label><button onClick={() => setSourceChanged(!sourceChanged)}>{sourceChanged ? 'CLEAR' : 'CHANGE SOURCE'}</button></div></details>
+        </section>
+      )}
+
+      <footer className="tabbar">
+        <button className={screen === 'stories' || screen === 'brief' ? 'active' : ''} onClick={() => go('stories')}><span>▤</span>STORIES</button>
+        <button className={screen === 'new' ? 'active' : ''} onClick={() => go('new')}><span>＋</span>NEW</button>
+        <button className={screen === 'connect' ? 'active' : ''} onClick={() => go('connect')}><span>⌁</span>CONNECT</button>
+      </footer>
+    </main>
   );
 }
