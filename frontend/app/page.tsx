@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 
 type Screen = 'stories' | 'connect' | 'new' | 'brief';
 type CreateStep = 'prompt' | 'spine' | 'building';
-type DigTab = 'used' | 'skipped' | 'unknown';
+type SourceTab = 'used' | 'skipped' | 'unknown';
 
 const storyRows = [
   { title: 'Allocation checkup', detail: 'Where the team is spending time, and what changed.', state: 'READY', age: '2h ago', open: true },
@@ -21,7 +21,7 @@ const sourceGroups = {
     { id: 'S1', author: '@lee', time: 'Yesterday 16:41', text: 'Lunch is arriving at 12:30.' },
   ],
   unknown: [
-    { id: 'X1', author: 'private channel', time: 'Today 08:50', text: '[Source exists — no access]' },
+    { id: 'X1', author: 'unmatched', time: 'Today 08:50', text: 'A planning reference was mentioned, but Flint could not match it to an attached source.' },
   ],
 };
 
@@ -29,12 +29,15 @@ export default function HomePage() {
   const [screen, setScreen] = useState<Screen>('stories');
   const [createStep, setCreateStep] = useState<CreateStep>('prompt');
   const [prompt, setPrompt] = useState('@channel #product @doc Allocation plan — where are we over-investing, and what should move?');
-  const [digTab, setDigTab] = useState<DigTab>('used');
-  const [digOpen, setDigOpen] = useState(false);
+  const [sourceTab, setSourceTab] = useState<SourceTab>('used');
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const [sourceChanged, setSourceChanged] = useState(true);
-  const [financeAccess, setFinanceAccess] = useState(false);
+  const [financeAccess, setFinanceAccess] = useState(true);
   const [ask, setAsk] = useState('');
-  const [refinement, setRefinement] = useState('');
+  const [episodes, setEpisodes] = useState<string[]>([]);
+  const [pendingEpisode, setPendingEpisode] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const commandReady = /@channel\b/i.test(prompt) && /@(doc|document)\b/i.test(prompt);
 
   function go(next: Screen) {
     setScreen(next);
@@ -42,13 +45,18 @@ export default function HomePage() {
     window.scrollTo(0, 0);
   }
 
-  const commandReady = /@channel\b/i.test(prompt) && /@(doc|document)\b/i.test(prompt);
-
   function submitAsk(event: FormEvent) {
     event.preventDefault();
-    if (!ask.trim()) return;
-    setRefinement(`Reader focus: ${ask.trim()}`);
+    const message = ask.trim();
+    if (!message || updating) return;
     setAsk('');
+    setPendingEpisode(message);
+    setUpdating(true);
+    window.setTimeout(() => {
+      setEpisodes((current) => [...current, message]);
+      setPendingEpisode('');
+      setUpdating(false);
+    }, 900);
   }
 
   return (
@@ -92,7 +100,7 @@ export default function HomePage() {
           {createStep === 'prompt' && <form className="create-form" onSubmit={(e) => { e.preventDefault(); if (commandReady) setCreateStep('spine'); }}>
             <div className="command-line">
               <label htmlFor="story-prompt">~/wiki $</label>
-              <input id="story-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} autoComplete="off" spellCheck={false} autoFocus />
+              <input id="story-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} autoComplete="off" spellCheck="false" autoFocus />
               <button type="submit" aria-label="Run command" disabled={!commandReady}>↵</button>
             </div>
             <div className="autocomplete" aria-live="polite"><span>@channel</span><span>@doc</span><span>@document</span></div>
@@ -107,27 +115,37 @@ export default function HomePage() {
         </section>
       )}
 
-      {screen === 'brief' && (
+      {screen === 'brief' && !financeAccess && (
+        <section className="screen denied-screen">
+          <p>// ACCESS</p><h1>Access denied</h1>
+          <span>This brief requires a source you cannot access. Flint will not render a partial story.</span>
+          <button className="outline-command" onClick={() => go('stories')}>← STORIES</button>
+          <button className="demo-access" onClick={() => setFinanceAccess(true)}>DEMO: RESTORE ACCESS</button>
+        </section>
+      )}
+
+      {screen === 'brief' && financeAccess && (
         <section className="screen brief-screen">
           <header className="brief-header"><p>// LIVING BRIEF · #PRODUCT</p><h1>Allocation checkup</h1><div className="meta"><span>STATUS: CURRENT</span><span>UPDATED: 2H AGO</span><span>OWNER: MAYA</span></div></header>
           <article className="story-prose">
             <p className="lead">The team is over-investing in infrastructure relative to its immediate goal: improving activation before the next planning cycle.</p>
-            <p>Three weeks of migration work pulled two engineers from activation. The migration still needs to land, but the team agreed that one engineer will return to activation after Friday rather than rolling directly into the next infrastructure project. <button className="evidence-link" onClick={() => setDigOpen(!digOpen)}>› E1 DIG</button>{sourceChanged && <span className="source-changed">! Source changed 2h ago</span>}</p>
-            <p>That shift protects the work most closely tied to the quarter’s outcome without abandoning reliability. The remaining infrastructure owner will finish the migration and document follow-up work for the next cycle. <button className="evidence-link" onClick={() => setDigOpen(!digOpen)}>› E2 DIG</button></p>
-            <p>The budget impact is supported by a restricted finance note: <span className="acl-stub">{financeAccess ? 'the change stays within the approved headcount plan.' : '[Source exists — no access]'}</span></p>
-            {refinement && <p className="reader-focus"><span>REFINED</span>{refinement}</p>}
+            <p>Three weeks of migration work pulled two engineers from activation. The migration still needs to land, but the team agreed that one engineer will return to activation after Friday rather than rolling directly into the next infrastructure project. <button className="evidence-link" onClick={() => setSourcesOpen(!sourcesOpen)}>› E1 SOURCES</button>{sourceChanged && <span className="source-changed">! Source changed 2h ago</span>}</p>
+            <p>That shift protects the work most closely tied to the quarter’s outcome without abandoning reliability. The remaining infrastructure owner will finish the migration and document follow-up work for the next cycle. <button className="evidence-link" onClick={() => setSourcesOpen(!sourcesOpen)}>› E2 SOURCES</button></p>
+            <p>The budget impact stays within the approved headcount plan.</p>
+            {episodes.map((episode, index) => <p className="reader-focus" key={`${episode}-${index}`}><span>EPISODE {index + 1} · ADDED TO STORY</span>{episode}</p>)}
           </article>
 
-          {digOpen && <aside className="dig-panel">
-            <div className="dig-title"><span>EVIDENCE DIG</span><button onClick={() => setDigOpen(false)}>×</button></div>
-            <p className="how">The recommendation combines the migration timeline with the team’s activation commitment.</p>
-            <div className="dig-tabs" role="tablist">
-              {(['used', 'skipped', 'unknown'] as DigTab[]).map((tab) => <button key={tab} className={digTab === tab ? 'active' : ''} onClick={() => setDigTab(tab)}>{tab.toUpperCase()} <b>{sourceGroups[tab].length}</b></button>)}
+          {sourcesOpen && <aside className="source-panel">
+            <div className="source-title"><span>SOURCES</span><button onClick={() => setSourcesOpen(false)}>×</button></div>
+            <p className="how"><strong>HOW WE GOT HERE</strong>The recommendation combines the migration timeline with the team’s activation commitment.</p>
+            <div className="source-tabs" role="tablist">
+              {(['used', 'skipped', 'unknown'] as SourceTab[]).map((tab) => <button key={tab} className={sourceTab === tab ? 'active' : ''} onClick={() => setSourceTab(tab)}>{tab.toUpperCase()} <b>{sourceGroups[tab].length}</b></button>)}
             </div>
-            <div className="quote-stack">{sourceGroups[digTab].map((source) => <blockquote key={source.id}><header><code>{source.id}</code><strong>{source.author}</strong><span>{source.time}</span></header><p>{source.text}</p></blockquote>)}</div>
+            <div className="quote-stack">{sourceGroups[sourceTab].map((source) => <blockquote key={source.id}><header><code>{source.id}</code><strong>{source.author}</strong><span>{source.time}</span></header><p>{source.text}</p></blockquote>)}</div>
           </aside>}
 
-          <form className="ask-bar" onSubmit={submitAsk}><span>&gt;</span><input value={ask} onChange={(e) => setAsk(e.target.value)} aria-label="Ask a question about this page" placeholder="Ask a question about this page…" /><button>ASK ↵</button></form>
+          {updating && <div className="updating-line"><i /><span>UPDATING STORY</span><small>Considering new episode: “{pendingEpisode}”</small></div>}
+          <form className="ask-bar" onSubmit={submitAsk}><span>&gt;</span><input value={ask} onChange={(e) => setAsk(e.target.value)} disabled={updating} aria-label="Ask or share an idea about this page" placeholder="Ask or share an idea about this page…" /><button disabled={updating}>SEND ↵</button></form>
 
           <details className="demo-controls"><summary>DEMO_CONTROLS</summary><div><label><input type="checkbox" checked={financeAccess} onChange={(e) => setFinanceAccess(e.target.checked)} /> FINANCE_ACCESS</label><button onClick={() => setSourceChanged(!sourceChanged)}>{sourceChanged ? 'CLEAR' : 'CHANGE SOURCE'}</button></div></details>
         </section>
