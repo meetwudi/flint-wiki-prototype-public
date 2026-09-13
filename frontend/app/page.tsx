@@ -25,8 +25,32 @@ const sourceGroups = {
   ],
 };
 
+const story = {
+  title: 'Allocation checkup',
+  subtitle: 'Where product and engineering time is concentrated—and what should move next.',
+  summary: [
+    'The team is over-investing in infrastructure relative to its immediate goal: improving activation before the next planning cycle.',
+    'Three weeks of migration work pulled two engineers from activation. The migration still needs to land, but the team agreed that one engineer will return to activation after Friday rather than rolling directly into the next infrastructure project.',
+    'That shift protects the quarter’s outcome without abandoning reliability. The remaining infrastructure owner will finish the migration and document follow-up work for the next cycle. The budget impact stays within the approved headcount plan.',
+  ],
+  evidence: [
+    {
+      id: 'E1',
+      title: 'Migration work displaced activation capacity',
+      note: 'Two source excerpts · Slack',
+      quotes: sourceGroups.used,
+    },
+    {
+      id: 'E2',
+      title: 'One engineer returns after Friday',
+      note: 'One source excerpt · Allocation plan',
+      quotes: [sourceGroups.used[1]],
+    },
+  ],
+};
+
 export default function HomePage() {
-  const [screen, setScreen] = useState<Screen>('stories');
+  const [screen, setScreen] = useState<Screen>('brief');
   const [createStep, setCreateStep] = useState<CreateStep>('prompt');
   const [prompt, setPrompt] = useState('@channel #product @doc Allocation plan — where are we over-investing, and what should move?');
   const [sourceTab, setSourceTab] = useState<SourceTab>('used');
@@ -37,6 +61,7 @@ export default function HomePage() {
   const [episodes, setEpisodes] = useState<string[]>([]);
   const [pendingEpisode, setPendingEpisode] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const commandReady = /@channel\b/i.test(prompt) && /@(doc|document)\b/i.test(prompt);
 
   function go(next: Screen) {
@@ -52,10 +77,12 @@ export default function HomePage() {
     setAsk('');
     setPendingEpisode(message);
     setUpdating(true);
+    setTimelineOpen(true);
     window.setTimeout(() => {
       setEpisodes((current) => [...current, message]);
       setPendingEpisode('');
       setUpdating(false);
+      setTimelineOpen(false);
     }, 900);
   }
 
@@ -63,7 +90,7 @@ export default function HomePage() {
     <main className="shell">
       <nav className="terminal-bar" aria-label="Flint navigation">
         <button className="path" onClick={() => go('stories')}><span>~/wiki</span> $</button>
-        <span className="route">{screen === 'new' ? 'new-story' : screen}</span>
+        <span className="route">chrome <b>—</b> {screen === 'new' ? 'new-story' : screen}</span>
         <span className="live"><i /> LIVE</span>
       </nav>
 
@@ -126,26 +153,44 @@ export default function HomePage() {
 
       {screen === 'brief' && financeAccess && (
         <section className="screen brief-screen">
-          <header className="brief-header"><p>// LIVING BRIEF · #PRODUCT</p><h1>Allocation checkup</h1><div className="meta"><span>STATUS: CURRENT</span><span>UPDATED: 2H AGO</span><span>OWNER: MAYA</span></div></header>
-          <article className="story-prose">
-            <p className="lead">The team is over-investing in infrastructure relative to its immediate goal: improving activation before the next planning cycle.</p>
-            <p>Three weeks of migration work pulled two engineers from activation. The migration still needs to land, but the team agreed that one engineer will return to activation after Friday rather than rolling directly into the next infrastructure project. <button className="evidence-link" onClick={() => setSourcesOpen(!sourcesOpen)}>› E1 SOURCES</button>{sourceChanged && <span className="source-changed">! Source changed 2h ago</span>}</p>
-            <p>That shift protects the work most closely tied to the quarter’s outcome without abandoning reliability. The remaining infrastructure owner will finish the migration and document follow-up work for the next cycle. <button className="evidence-link" onClick={() => setSourcesOpen(!sourcesOpen)}>› E2 SOURCES</button></p>
-            <p>The budget impact stays within the approved headcount plan.</p>
-            {episodes.map((episode, index) => <p className="reader-focus" key={`${episode}-${index}`}><span>EPISODE {index + 1} · ADDED TO STORY</span>{episode}</p>)}
+          <article className="article">
+            <header className="brief-header"><p>// LIVING BRIEF · #PRODUCT</p><h1>{story.title}</h1><p className="subtitle">{story.subtitle}</p><div className="meta"><span>STATUS: CURRENT</span><span>UPDATED: 2H AGO</span><span>OWNER: MAYA</span></div></header>
+
+            {(updating || episodes.length > 0) && <details className="process" open={timelineOpen} onToggle={(event) => setTimelineOpen(event.currentTarget.open)}>
+              <summary><span><i />{updating ? 'UPDATING STORY' : 'LATEST UPDATE RESOLVED'}</span><small>{updating ? 'RUNNING NOW' : 'COLLAPSED · VIEW PROCESS'}</small></summary>
+              <ol>
+                <li><time>10:42:01</time><b>RUN</b><span>Received “{pendingEpisode || episodes[episodes.length - 1]}”</span></li>
+                <li><time>10:42:02</time><b>RUN</b><span>Importing threads from #product</span></li>
+                <li><time>10:42:04</time><b>SYNTHESIS</b><span>Comparing the new episode with the current story and evidence</span></li>
+                <li className={updating ? 'waiting' : 'resolved'}><time>10:42:06</time><b>{updating ? 'RUNNING' : 'RESOLVED'}</b><span>{updating ? 'Updating the article…' : 'Article updated; source links retained'}</span></li>
+              </ol>
+            </details>}
+
+            <section className="story-prose" aria-labelledby="summary-heading">
+              <h2 id="summary-heading">Summary</h2>
+              {story.summary.map((paragraph, index) => <p className={index === 0 ? 'lead' : ''} key={paragraph}>{paragraph}{index === 1 && sourceChanged && <span className="source-changed">! Source changed 2h ago</span>}</p>)}
+              {episodes.map((episode, index) => <p className="reader-focus" key={`${episode}-${index}`}><span>EPISODE {index + 1} · INCORPORATED</span>{episode}</p>)}
+            </section>
+
+            <section className="evidence" aria-labelledby="evidence-heading">
+              <div className="section-heading"><p>// GROUNDED IN SOURCE MATERIAL</p><h2 id="evidence-heading">Evidence</h2></div>
+              {story.evidence.map((item) => <details className="evidence-card" key={item.id}>
+                <summary><code>{item.id}</code><span><strong>{item.title}</strong><small>{item.note}</small></span><i>+</i></summary>
+                <div className="evidence-quotes">{item.quotes.map((quote) => <blockquote key={quote.id}><p>“{quote.text}”</p><footer><strong>{quote.author}</strong><span>{quote.time}</span></footer></blockquote>)}</div>
+              </details>)}
+              <button className="sources-button" onClick={() => setSourcesOpen(!sourcesOpen)} aria-expanded={sourcesOpen}>SOURCES / HOW WE GOT HERE <span>{sourcesOpen ? '↑' : '↓'}</span></button>
+              {sourcesOpen && <aside className="source-panel">
+                <div className="source-title"><span>SOURCES / HOW WE GOT HERE</span><button onClick={() => setSourcesOpen(false)} aria-label="Close sources">×</button></div>
+                <p className="how">The recommendation combines the migration timeline with the team’s activation commitment.</p>
+                <div className="source-tabs" role="tablist">
+                  {(['used', 'skipped', 'unknown'] as SourceTab[]).map((tab) => <button key={tab} className={sourceTab === tab ? 'active' : ''} onClick={() => setSourceTab(tab)}>{tab.toUpperCase()} <b>{sourceGroups[tab].length}</b></button>)}
+                </div>
+                <div className="quote-stack">{sourceGroups[sourceTab].map((source) => <blockquote key={source.id}><header><code>{source.id}</code><strong>{source.author}</strong><span>{source.time}</span></header><p>{source.text}</p></blockquote>)}</div>
+              </aside>}
+            </section>
           </article>
 
-          {sourcesOpen && <aside className="source-panel">
-            <div className="source-title"><span>SOURCES</span><button onClick={() => setSourcesOpen(false)}>×</button></div>
-            <p className="how"><strong>HOW WE GOT HERE</strong>The recommendation combines the migration timeline with the team’s activation commitment.</p>
-            <div className="source-tabs" role="tablist">
-              {(['used', 'skipped', 'unknown'] as SourceTab[]).map((tab) => <button key={tab} className={sourceTab === tab ? 'active' : ''} onClick={() => setSourceTab(tab)}>{tab.toUpperCase()} <b>{sourceGroups[tab].length}</b></button>)}
-            </div>
-            <div className="quote-stack">{sourceGroups[sourceTab].map((source) => <blockquote key={source.id}><header><code>{source.id}</code><strong>{source.author}</strong><span>{source.time}</span></header><p>{source.text}</p></blockquote>)}</div>
-          </aside>}
-
-          {updating && <div className="updating-line"><i /><span>UPDATING STORY</span><small>Considering new episode: “{pendingEpisode}”</small></div>}
-          <form className="ask-bar" onSubmit={submitAsk}><span>&gt;</span><input value={ask} onChange={(e) => setAsk(e.target.value)} disabled={updating} aria-label="Ask or share an idea about this page" placeholder="Ask or share an idea about this page…" /><button disabled={updating}>SEND ↵</button></form>
+          <form className="ask-bar" onSubmit={submitAsk}><span className="prompt-mark">~/wiki $</span><input value={ask} onChange={(e) => setAsk(e.target.value)} disabled={updating} aria-label="Ask or share an idea about this page" placeholder="Ask or share an idea about this page…" /><button type="button" className="mic" aria-label="Start voice input" title="Voice input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v5a4 4 0 0 0 4 4Zm-7-4a7 7 0 0 0 14 0M12 18v4m-4 0h8" /></svg></button><button className="send" disabled={updating} aria-label="Send">↵</button></form>
 
           <details className="demo-controls"><summary>DEMO_CONTROLS</summary><div><label><input type="checkbox" checked={financeAccess} onChange={(e) => setFinanceAccess(e.target.checked)} /> FINANCE_ACCESS</label><button onClick={() => setSourceChanged(!sourceChanged)}>{sourceChanged ? 'CLEAR' : 'CHANGE SOURCE'}</button></div></details>
         </section>
